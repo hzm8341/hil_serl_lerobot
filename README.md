@@ -80,6 +80,33 @@ This workspace already contains a local `.venv` in many development setups. The 
 
 From the repository root:
 
+Recommended setup path:
+
+```bash
+scripts/setup_environment.sh
+source .venv/bin/activate
+```
+
+The setup script creates or reuses `.venv`, installs the HIL-SERL runtime dependencies, and runs a small import check for `gym_hil`, MuJoCo, PyTorch, torchvision, gRPC, and protobuf.
+
+Useful script options:
+
+```bash
+# Reuse the current environment without installing or checking dependencies.
+scripts/setup_environment.sh --skip-install --skip-check
+
+# Create the environment with a specific Python executable.
+scripts/setup_environment.sh --python python3.10
+
+# Remove and recreate the virtual environment.
+scripts/setup_environment.sh --recreate
+
+# Install only the minimal HIL-SERL runtime dependencies.
+scripts/setup_environment.sh --install-mode minimal
+```
+
+Manual fallback:
+
 ```bash
 # Use the existing local environment if it is available.
 source .venv/bin/activate
@@ -247,6 +274,13 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
   tests/rl/test_gym_manipulator_recording.py
 ```
 
+Run the setup-script static tests:
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
+  tests/test_setup_environment_script.py
+```
+
 Run the actor/learner transport tests:
 
 ```bash
@@ -306,4 +340,3 @@ The HIL-SERL simulation guide references:
   year={2024}
 }
 ```
-

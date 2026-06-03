@@ -67,15 +67,36 @@ outputs/
 - 键盘或手柄；
 - LeRobot 依赖和 `hilserl` extra，主要包括 `gym-hil>=0.1.9`、`torch`、`torchvision`、`grpcio`、`placo` 等。
 
-如果当前工作区已有 `.venv`，优先使用它：
+推荐使用项目脚本配置环境：
 
 ```bash
+scripts/setup_environment.sh
 source .venv/bin/activate
 ```
 
-新环境安装方式：
+该脚本会创建或复用 `.venv`，安装 HIL-SERL 运行依赖，并检查 `gym_hil`、MuJoCo、PyTorch、torchvision、gRPC、protobuf 等模块是否可导入。
+
+常用选项：
 
 ```bash
+# 只复用当前环境，不安装、不检查。
+scripts/setup_environment.sh --skip-install --skip-check
+
+# 指定 Python 版本。
+scripts/setup_environment.sh --python python3.10
+
+# 删除并重建虚拟环境。
+scripts/setup_environment.sh --recreate
+
+# 只安装最小 HIL-SERL 运行依赖。
+scripts/setup_environment.sh --install-mode minimal
+```
+
+手动备用方式：
+
+```bash
+source .venv/bin/activate
+
 pip install -e ".[hilserl]"
 ```
 
@@ -211,6 +232,13 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
   tests/rl/test_actor_learner.py
 ```
 
+环境脚本静态测试：
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
+  tests/test_setup_environment_script.py
+```
+
 ## 常见问题
 
 ### 为什么不按键机械臂也会动？
@@ -252,4 +280,3 @@ outputs/hilserl_sim/
   year={2024}
 }
 ```
-

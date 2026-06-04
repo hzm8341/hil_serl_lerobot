@@ -42,6 +42,7 @@
     "repo_id": "local/gym_hil_keyboard_smoke",
     "dataset_root": "outputs/hilserl_sim/demos/gym_hil_keyboard_smoke",
     "task": "PandaPickCubeKeyboard-v0",
+    "idle_behavior": "random",
     "num_episodes": 1,
     "episode": 0,
     "pretrained_policy_name_or_path": null,

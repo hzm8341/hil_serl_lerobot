@@ -38,6 +38,7 @@ Example:
 
 import logging
 import time
+from contextlib import nullcontext
 from collections import deque
 from collections.abc import Sequence
 from threading import Lock
@@ -65,11 +66,17 @@ from lerobot.teleoperators import (
     so101_leader,  # noqa: F401
 )
 from lerobot.teleoperators.gamepad.teleop_gamepad import GamepadTeleop
+from lerobot.teleoperators.keyboard.configuration_keyboard import KeyboardEndEffectorTeleopConfig
 from lerobot.teleoperators.keyboard.teleop_keyboard import KeyboardEndEffectorTeleop
 from lerobot.utils.robot_utils import busy_wait
 from lerobot.utils.utils import log_say
 
 logging.basicConfig(level=logging.INFO)
+
+MUJOCO_COLLISION_GEOM_GROUP = 3
+MUJOCO_CONVEX_HULL_VIS_FLAG = 0
+# MuJoCo simulate maps "I" to inertia boxes; conflicts with keyboard intervention key "i".
+MUJOCO_INERTIA_VIS_FLAG = 10
 
 
 def reset_follower_position(robot_arm, target_position):
@@ -1716,6 +1723,11 @@ class KeyboardControlWrapper(GamepadControlWrapper):
         teleop_device,  # Accepts an instantiated teleoperator
         use_gripper=False,  # This should align with teleop_device's config
         auto_reset=False,
+        manual_input_timeout_s=None,
+        timeout_behavior="hold",
+        safe_retreat_action=None,
+        safe_retreat_steps=10,
+        require_manual_rearm_after_timeout=False,
     ):
         """
         Initialize the gamepad controller wrapper.
@@ -1729,6 +1741,22 @@ class KeyboardControlWrapper(GamepadControlWrapper):
         super().__init__(env, teleop_device, use_gripper, auto_reset)
 
         self.is_intervention_active = False
+        self.manual_input_timeout_s = manual_input_timeout_s
+        self.timeout_behavior = timeout_behavior
+        self.require_manual_rearm_after_timeout = require_manual_rearm_after_timeout
+        self.control_state = "auto"
+        self.last_manual_input_timestamp = None
+        self.safe_retreat_steps = safe_retreat_steps
+        self.safe_retreat_steps_remaining = safe_retreat_steps
+        self.awaiting_manual_rearm = False
+        default_retreat_action = _neutral_action_like(self.env.action_space.sample())
+        if default_retreat_action.size >= 3:
+            default_retreat_action[2] = 1.0
+        self.safe_retreat_action = (
+            np.asarray(safe_retreat_action, dtype=np.float32)
+            if safe_retreat_action is not None
+            else default_retreat_action
+        )
 
         logging.info("Keyboard control wrapper initialized with provided teleop_device.")
         print("Keyboard controls:")
@@ -1739,18 +1767,27 @@ class KeyboardControlWrapper(GamepadControlWrapper):
         print("  s: End episode with SUCCESS")
         print("  r: End episode with RERECORD")
         print("  i: Start/Stop Intervention")
+        if self.require_manual_rearm_after_timeout:
+            print("  c: Confirm and re-arm AUTO after a timeout-triggered safe state")
+        if self.manual_input_timeout_s is not None:
+            print(
+                f"  Manual input timeout: {self.manual_input_timeout_s:.2f}s -> {self.timeout_behavior.upper()}"
+            )
 
     def get_teleop_commands(
         self,
     ) -> tuple[bool, np.ndarray, bool, bool, bool]:
         action_dict = self.teleop_device.get_action()
         episode_end_status = None
+        rearm_requested = False
 
         # Unroll the misc_keys_queue to check for events related to intervention, episode success, etc.
         while not self.teleop_device.misc_keys_queue.empty():
             key = self.teleop_device.misc_keys_queue.get()
             if key == "i":
                 self.is_intervention_active = not self.is_intervention_active
+            elif key == "c":
+                rearm_requested = True
             elif key == "f":
                 episode_end_status = "failure"
             elif key == "s":
@@ -1781,7 +1818,90 @@ class KeyboardControlWrapper(GamepadControlWrapper):
             terminate_episode,
             success,
             rerecord_episode,
+            rearm_requested,
         )
+
+    def step(self, action):
+        (
+            is_intervention,
+            teleop_action,
+            terminate_episode,
+            success,
+            rerecord_episode,
+            rearm_requested,
+        ) = self.get_teleop_commands()
+
+        if terminate_episode:
+            logging.info(f"Episode manually ended: {'SUCCESS' if success else 'FAILURE'}")
+
+        state_update = _resolve_keyboard_control_state(
+            proposed_action=action,
+            teleop_action=teleop_action,
+            is_intervention_active=is_intervention,
+            current_state=self.control_state,
+            last_manual_input_timestamp=self.last_manual_input_timestamp,
+            now=time.perf_counter(),
+            manual_input_timeout_s=self.manual_input_timeout_s,
+            timeout_behavior=self.timeout_behavior,
+            safe_retreat_action=self.safe_retreat_action,
+            safe_retreat_steps_remaining=self.safe_retreat_steps_remaining,
+            require_manual_rearm_after_timeout=self.require_manual_rearm_after_timeout,
+            rearm_requested=rearm_requested,
+        )
+        previous_state = self.control_state
+        self.control_state = state_update["state"]
+        self.last_manual_input_timestamp = state_update["last_manual_input_timestamp"]
+        self.safe_retreat_steps_remaining = state_update["safe_retreat_steps_remaining"]
+        self.awaiting_manual_rearm = state_update["awaiting_rearm"]
+        resolved_action = state_update["action"]
+
+        if previous_state != self.control_state:
+            logging.info(
+                "Keyboard control state transition: %s -> %s",
+                previous_state,
+                self.control_state,
+            )
+        if state_update["timed_out"]:
+            logging.warning(
+                "Manual input timed out after %.2fs; entering %s",
+                self.manual_input_timeout_s,
+                self.control_state,
+            )
+        if self.awaiting_manual_rearm and rearm_requested:
+            logging.info("Manual re-arm requested but AUTO is still gated by intervention state.")
+        elif previous_state in {"safe_hold", "safe_retreat"} and self.control_state == "auto":
+            logging.info("AUTO re-armed after operator confirmation.")
+
+        obs, reward, terminated, truncated, info = self.env.step(resolved_action)
+
+        terminated = terminated or truncated or terminate_episode
+
+        if success:
+            reward = 1.0
+            logging.info("Episode ended successfully with reward 1.0")
+
+        info["is_intervention"] = is_intervention
+        info["action_intervention"] = resolved_action
+        info["rerecord_episode"] = rerecord_episode
+        info["control_state"] = self.control_state
+        info["manual_input_timed_out"] = state_update["timed_out"]
+        info["awaiting_manual_rearm"] = self.awaiting_manual_rearm
+
+        if terminated or truncated:
+            info["next.success"] = success
+            if self.auto_reset:
+                obs, reset_info = self.reset()
+                info.update(reset_info)
+
+        return obs, reward, terminated, truncated, info
+
+    def reset(self, **kwargs):
+        self.is_intervention_active = False
+        self.control_state = "auto"
+        self.last_manual_input_timestamp = None
+        self.safe_retreat_steps_remaining = self.safe_retreat_steps
+        self.awaiting_manual_rearm = False
+        return super().reset(**kwargs)
 
 
 class GymHilDeviceWrapper(gym.Wrapper):
@@ -1837,6 +1957,144 @@ class GymHilObservationProcessorWrapper(gym.ObservationWrapper):
 ###########################################################
 
 
+def _get_mujoco_model_from_env(env: gym.Env) -> Any:
+    unwrapped = env.unwrapped
+    return getattr(unwrapped, "model", None) or getattr(unwrapped, "_model", None)
+
+
+def _find_mujoco_passive_viewer(env: gym.Env) -> Any | None:
+    current: gym.Env | None = env
+    while current is not None:
+        viewer = getattr(current, "_viewer", None)
+        if viewer is not None and getattr(viewer, "opt", None) is not None:
+            return viewer
+        current = getattr(current, "env", None)
+    return None
+
+
+def _hide_mujoco_collision_geoms_in_model(model: Any) -> None:
+    """Make collision geoms invisible in all MuJoCo renderers (physics unchanged)."""
+    ngeom = getattr(model, "ngeom", 0)
+    geom_group = getattr(model, "geom_group", None)
+    geom_rgba = getattr(model, "geom_rgba", None)
+    if geom_group is None or geom_rgba is None:
+        return
+    for geom_id in range(ngeom):
+        if geom_group[geom_id] == MUJOCO_COLLISION_GEOM_GROUP:
+            geom_rgba[geom_id] = (0.0, 0.0, 0.0, 0.0)
+
+
+def _apply_mujoco_debug_vis_options(viewer: Any) -> bool:
+    """Update passive viewer options only (safe to call without viewer.sync)."""
+    viewer_options = getattr(viewer, "opt", None)
+    if viewer_options is None:
+        return False
+
+    updated = False
+    geomgroup = getattr(viewer_options, "geomgroup", None)
+    if geomgroup is not None and len(geomgroup) > MUJOCO_COLLISION_GEOM_GROUP:
+        if geomgroup[MUJOCO_COLLISION_GEOM_GROUP] != 0:
+            geomgroup[MUJOCO_COLLISION_GEOM_GROUP] = 0
+            updated = True
+
+    flags = getattr(viewer_options, "flags", None)
+    if flags is not None:
+        for flag_idx in (MUJOCO_CONVEX_HULL_VIS_FLAG, MUJOCO_INERTIA_VIS_FLAG):
+            if len(flags) > flag_idx and flags[flag_idx] != 0:
+                flags[flag_idx] = 0
+                updated = True
+    return updated
+
+
+def _sync_mujoco_passive_viewer(viewer: Any) -> None:
+    """Apply HIL display options and sync the passive viewer from the main thread only."""
+    lock = getattr(viewer, "lock", None)
+    lock_context = lock() if callable(lock) else nullcontext()
+    with lock_context:
+        _apply_mujoco_debug_vis_options(viewer)
+    sync = getattr(viewer, "sync", None)
+    if callable(sync):
+        sync()
+
+
+def _hide_mujoco_debug_visuals_from_viewer(viewer: Any) -> None:
+    """Backward-compatible alias used by other wrappers."""
+    _sync_mujoco_passive_viewer(viewer)
+
+
+def _hide_mujoco_collision_geoms_from_viewer(viewer: Any) -> None:
+    """Backward-compatible alias for viewer debug hiding."""
+    _hide_mujoco_debug_visuals_from_viewer(viewer)
+
+
+class MujocoViewerCollisionHideWrapper(gym.Wrapper):
+    """Re-apply passive viewer collision hiding after each env step (non-keyboard HIL tasks)."""
+
+    def reset(self, **kwargs):
+        result = super().reset(**kwargs)
+        viewer = _find_mujoco_passive_viewer(self.env)
+        if viewer is not None:
+            _hide_mujoco_collision_geoms_from_viewer(viewer)
+        return result
+
+    def step(self, action):
+        result = super().step(action)
+        viewer = _find_mujoco_passive_viewer(self.env)
+        if viewer is not None:
+            _hide_mujoco_collision_geoms_from_viewer(viewer)
+        return result
+
+
+class HiddenCollisionPassiveViewerWrapper(gym.Wrapper):
+    """Passive MuJoCo viewer that keeps debug collision/inertia visuals hidden."""
+
+    def __init__(
+        self,
+        env: gym.Env,
+        *,
+        show_left_ui: bool = True,
+        show_right_ui: bool = True,
+    ) -> None:
+        import mujoco.viewer
+
+        super().__init__(env)
+        self._viewer = mujoco.viewer.launch_passive(
+            env.unwrapped.model,
+            env.unwrapped.data,
+            show_left_ui=show_left_ui,
+            show_right_ui=show_right_ui,
+        )
+        _sync_mujoco_passive_viewer(self._viewer)
+
+    def reset(self, **kwargs):
+        observation, info = self.env.reset(**kwargs)
+        _sync_mujoco_passive_viewer(self._viewer)
+        return observation, info
+
+    def step(self, action):
+        observation, reward, terminated, truncated, info = self.env.step(action)
+        _sync_mujoco_passive_viewer(self._viewer)
+        return observation, reward, terminated, truncated, info
+
+    def close(self) -> None:
+        base_env = self.env.unwrapped
+        if hasattr(base_env, "_viewer"):
+            viewer = base_env._viewer
+            if viewer is not None and hasattr(viewer, "close") and callable(viewer.close):
+                try:
+                    viewer.close()
+                except Exception:
+                    pass
+            base_env._viewer = None
+
+        try:
+            self._viewer.close()
+        except Exception:
+            pass
+
+        self.env.close()
+
+
 def make_robot_env(cfg: EnvConfig) -> gym.Env:
     """
     Factory function to create a robot environment.
@@ -1852,15 +2110,63 @@ def make_robot_env(cfg: EnvConfig) -> gym.Env:
     """
     if cfg.type == "hil":
         import gym_hil  # noqa: F401
-
-        # TODO (azouitine)
-        env = gym.make(
-            f"gym_hil/{cfg.task}",
-            image_obs=True,
-            render_mode="human",
-            use_gripper=cfg.wrapper.use_gripper,
-            gripper_penalty=cfg.wrapper.gripper_penalty,
+        from gym_hil.wrappers.hil_wrappers import (
+            DEFAULT_EE_STEP_SIZE,
+            EEActionWrapper as GymHilEEActionWrapper,
+            GripperPenaltyWrapper as GymHilGripperPenaltyWrapper,
+            ResetDelayWrapper as GymHilResetDelayWrapper,
         )
+        use_manual_keyboard_wrapper = getattr(cfg.wrapper, "control_mode", None) == "keyboard_ee" and (
+            cfg.task is not None and "Keyboard" in cfg.task
+        )
+
+        if use_manual_keyboard_wrapper:
+            base_task = cfg.task.replace("Keyboard-v0", "Base-v0")
+            env = gym.make(
+                f"gym_hil/{base_task}",
+                image_obs=True,
+                render_mode="human",
+            )
+            _hide_mujoco_collision_geoms_in_model(env.unwrapped.model)
+            if cfg.wrapper.use_gripper:
+                env = GymHilGripperPenaltyWrapper(env, penalty=cfg.wrapper.gripper_penalty)
+            env = GymHilEEActionWrapper(
+                env,
+                ee_action_step_size=DEFAULT_EE_STEP_SIZE,
+                use_gripper=cfg.wrapper.use_gripper,
+            )
+            teleop_device = KeyboardEndEffectorTeleop(
+                KeyboardEndEffectorTeleopConfig(use_gripper=cfg.wrapper.use_gripper)
+            )
+            env = KeyboardControlWrapper(
+                env=env,
+                teleop_device=teleop_device,
+                use_gripper=cfg.wrapper.use_gripper,
+                manual_input_timeout_s=getattr(cfg, "manual_input_timeout_s", None),
+                timeout_behavior=getattr(cfg, "timeout_behavior", "hold"),
+                safe_retreat_action=getattr(cfg, "safe_retreat_action", None),
+                safe_retreat_steps=getattr(cfg, "safe_retreat_steps", 10),
+                require_manual_rearm_after_timeout=getattr(
+                    cfg, "require_manual_rearm_after_timeout", False
+                ),
+            )
+            env = HiddenCollisionPassiveViewerWrapper(env, show_left_ui=True, show_right_ui=True)
+            env = GymHilResetDelayWrapper(env, delay_seconds=1.0)
+        else:
+            env = gym.make(
+                f"gym_hil/{cfg.task}",
+                image_obs=True,
+                render_mode="human",
+                use_gripper=cfg.wrapper.use_gripper,
+                gripper_penalty=cfg.wrapper.gripper_penalty,
+            )
+            model = _get_mujoco_model_from_env(env)
+            if model is not None:
+                _hide_mujoco_collision_geoms_in_model(model)
+            viewer = _find_mujoco_passive_viewer(env)
+            if viewer is not None:
+                _hide_mujoco_collision_geoms_from_viewer(viewer)
+            env = MujocoViewerCollisionHideWrapper(env)
         env = GymHilObservationProcessorWrapper(env=env)
         env = GymHilDeviceWrapper(env=env, device=cfg.device)
         env = BatchCompatibleWrapper(env=env)
@@ -1934,6 +2240,13 @@ def make_robot_env(cfg: EnvConfig) -> gym.Env:
             env=env,
             teleop_device=teleop_device,
             use_gripper=cfg.wrapper.use_gripper,
+            manual_input_timeout_s=getattr(cfg, "manual_input_timeout_s", None),
+            timeout_behavior=getattr(cfg, "timeout_behavior", "hold"),
+            safe_retreat_action=getattr(cfg, "safe_retreat_action", None),
+            safe_retreat_steps=getattr(cfg, "safe_retreat_steps", 10),
+            require_manual_rearm_after_timeout=getattr(
+                cfg, "require_manual_rearm_after_timeout", False
+            ),
         )
     elif control_mode == "leader":
         env = GearedLeaderControlWrapper(
@@ -2002,6 +2315,134 @@ def _select_recorded_action(info, policy, action):
     if isinstance(recorded_action, torch.Tensor):
         return recorded_action.cpu().squeeze(0).float()
     return torch.as_tensor(recorded_action).squeeze(0).float()
+
+
+def _neutral_action_like(action: np.ndarray) -> np.ndarray:
+    neutral_action = np.zeros_like(action, dtype=np.float32)
+    if neutral_action.size > 3:
+        neutral_action[3:] = 1.0
+    return neutral_action
+
+
+def _resolve_idle_action(current_action, sampled_action, idle_behavior):
+    sampled_action = np.asarray(sampled_action, dtype=np.float32)
+    current_action = np.asarray(current_action, dtype=np.float32)
+
+    if idle_behavior == "random":
+        return sampled_action
+    if idle_behavior in {"hold", "manual_hold"}:
+        return _neutral_action_like(current_action)
+
+    raise ValueError(f"Unsupported idle behavior: {idle_behavior}")
+
+
+def _teleop_action_is_active(action, atol: float = 1e-6) -> bool:
+    if action is None:
+        return False
+
+    if isinstance(action, torch.Tensor):
+        action = action.detach().cpu().numpy()
+
+    action = np.asarray(action, dtype=np.float32).squeeze()
+    if action.size == 0:
+        return False
+
+    motion_is_active = np.any(np.abs(action[:3]) > atol)
+    gripper_is_active = action.size > 3 and np.any(np.abs(action[3:] - 1.0) > atol)
+    return bool(motion_is_active or gripper_is_active)
+
+
+def _resolve_keyboard_control_state(
+    proposed_action,
+    teleop_action,
+    is_intervention_active,
+    current_state,
+    last_manual_input_timestamp,
+    now,
+    manual_input_timeout_s,
+    timeout_behavior,
+    safe_retreat_action,
+    safe_retreat_steps_remaining,
+    require_manual_rearm_after_timeout=False,
+    rearm_requested=False,
+):
+    proposed_action = np.asarray(proposed_action, dtype=np.float32)
+    teleop_action = np.asarray(teleop_action, dtype=np.float32)
+    neutral_action = _neutral_action_like(teleop_action)
+    retreat_action = np.asarray(safe_retreat_action, dtype=np.float32)
+
+    safe_state_active = current_state in {"safe_hold", "safe_retreat"}
+    if not is_intervention_active:
+        if safe_state_active and require_manual_rearm_after_timeout and not rearm_requested:
+            return {
+                "state": "safe_hold",
+                "action": neutral_action,
+                "last_manual_input_timestamp": last_manual_input_timestamp,
+                "safe_retreat_steps_remaining": 0,
+                "timed_out": False,
+                "awaiting_rearm": True,
+            }
+        return {
+            "state": "auto",
+            "action": proposed_action,
+            "last_manual_input_timestamp": None,
+            "safe_retreat_steps_remaining": 0,
+            "timed_out": False,
+            "awaiting_rearm": False,
+        }
+
+    if _teleop_action_is_active(teleop_action):
+        return {
+            "state": "manual",
+            "action": teleop_action,
+            "last_manual_input_timestamp": now,
+            "safe_retreat_steps_remaining": safe_retreat_steps_remaining,
+            "timed_out": False,
+            "awaiting_rearm": False,
+        }
+
+    if manual_input_timeout_s is None:
+        return {
+            "state": "manual",
+            "action": neutral_action,
+            "last_manual_input_timestamp": last_manual_input_timestamp,
+            "safe_retreat_steps_remaining": safe_retreat_steps_remaining,
+            "timed_out": False,
+            "awaiting_rearm": False,
+        }
+
+    if last_manual_input_timestamp is None:
+        last_manual_input_timestamp = now
+
+    timed_out = (now - last_manual_input_timestamp) >= manual_input_timeout_s
+    if not timed_out:
+        return {
+            "state": "manual",
+            "action": neutral_action,
+            "last_manual_input_timestamp": last_manual_input_timestamp,
+            "safe_retreat_steps_remaining": safe_retreat_steps_remaining,
+            "timed_out": False,
+            "awaiting_rearm": False,
+        }
+
+    if timeout_behavior == "retreat" and safe_retreat_steps_remaining > 0:
+        return {
+            "state": "safe_retreat",
+            "action": retreat_action,
+            "last_manual_input_timestamp": last_manual_input_timestamp,
+            "safe_retreat_steps_remaining": safe_retreat_steps_remaining - 1,
+            "timed_out": True,
+            "awaiting_rearm": False,
+        }
+
+    return {
+        "state": "safe_hold",
+        "action": neutral_action,
+        "last_manual_input_timestamp": last_manual_input_timestamp,
+        "safe_retreat_steps_remaining": safe_retreat_steps_remaining,
+        "timed_out": True,
+        "awaiting_rearm": safe_state_active or require_manual_rearm_after_timeout,
+    }
 
 
 ###########################################################
@@ -2240,7 +2681,8 @@ def main(cfg: EnvConfig):
     env.reset()
 
     # Initialize the smoothed action as a random sample.
-    smoothed_action = env.action_space.sample() * 0.0
+    smoothed_action = _neutral_action_like(env.action_space.sample().detach().cpu().numpy())
+    idle_behavior = getattr(cfg, "idle_behavior", "random")
 
     # Smoothing coefficient (alpha) defines how much of the new random sample to mix in.
     # A value close to 0 makes the trajectory very smooth (slow to change), while a value close to 1 is less smooth.
@@ -2251,16 +2693,30 @@ def main(cfg: EnvConfig):
     while num_episode < 10:
         start_loop_s = time.perf_counter()
         # Sample a new random action from the robot's action space.
-        new_random_action = env.action_space.sample()
+        new_random_action = env.action_space.sample().detach().cpu().numpy()
         # Update the smoothed action using an exponential moving average.
-        smoothed_action = alpha * new_random_action + (1 - alpha) * smoothed_action
+        sampled_action = alpha * new_random_action + (1 - alpha) * smoothed_action
+        action = _resolve_idle_action(
+            current_action=smoothed_action,
+            sampled_action=sampled_action,
+            idle_behavior=idle_behavior,
+        )
 
         # Execute the step: wrap the NumPy action in a torch tensor.
-        obs, reward, terminated, truncated, info = env.step(smoothed_action)
+        obs, reward, terminated, truncated, info = env.step(torch.as_tensor(action, dtype=torch.float32))
+        if idle_behavior == "random":
+            smoothed_action = sampled_action
+        elif info.get("is_intervention") and _teleop_action_is_active(info.get("action_intervention")):
+            intervention_action = info["action_intervention"]
+            if isinstance(intervention_action, torch.Tensor):
+                intervention_action = intervention_action.detach().cpu().numpy()
+            smoothed_action = np.asarray(intervention_action, dtype=np.float32).squeeze()
+
         if terminated or truncated:
             successes.append(reward)
             env.reset()
             num_episode += 1
+            smoothed_action = _neutral_action_like(env.action_space.sample().detach().cpu().numpy())
 
         dt_s = time.perf_counter() - start_loop_s
         busy_wait(1 / cfg.fps - dt_s)

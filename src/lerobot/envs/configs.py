@@ -210,6 +210,12 @@ class HILSerlRobotEnvConfig(EnvConfig):
     push_to_hub: bool = True
     pretrained_policy_name_or_path: str | None = None
     reward_classifier_pretrained_path: str | None = None
+    idle_behavior: str = "random"
+    manual_input_timeout_s: float | None = None
+    timeout_behavior: str = "hold"
+    safe_retreat_steps: int = 10
+    safe_retreat_action: list[float] | None = None
+    require_manual_rearm_after_timeout: bool = False
     # For the reward classifier, to record more positive examples after a success
     number_of_steps_after_success: int = 0
 
@@ -260,6 +266,12 @@ class HILEnvConfig(EnvConfig):
     device: str = "cuda"
     push_to_hub: bool = True
     pretrained_policy_name_or_path: str | None = None
+    idle_behavior: str = "random"
+    manual_input_timeout_s: float | None = None
+    timeout_behavior: str = "hold"
+    safe_retreat_steps: int = 10
+    safe_retreat_action: list[float] | None = None
+    require_manual_rearm_after_timeout: bool = False
     # For the reward classifier, to record more positive examples after a success
     number_of_steps_after_success: int = 0
     ############################

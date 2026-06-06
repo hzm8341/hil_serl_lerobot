@@ -69,6 +69,45 @@ Important parameters:
 - `end_effector_step_sizes`: Size of the steps in the x,y,z axes of the end-effector
 - `control_mode`: Set to `"gamepad"` to use a gamepad controller
 
+For keyboard end-effector control, set `control_mode` to `"keyboard_ee"` and use a keyboard task such as `PandaPickCubeKeyboard-v0`.
+
+## Keyboard Intervention Controls
+
+When using `control_mode: "keyboard_ee"` in `gym_manipulator.py`, keyboard input is **intervention-oriented**:
+
+1. The environment may continue automatic/random actions when intervention is off.
+2. Press **`i`** to enable intervention (`Intervention ENABLED` in logs).
+3. Use the movement and gripper keys below while intervention is active.
+4. Press **`i`** again to disable intervention.
+
+| Key | Action |
+| --- | --- |
+| `i` | Enable / disable human intervention |
+| `↑` `↓` `←` `→` | Move end-effector in the X-Y plane |
+| `Left Shift` (hold) | Move down along Z axis |
+| `Right Shift` (hold) | Move up along Z axis |
+| `Left Ctrl` (hold) | Close gripper |
+| `Right Ctrl` (hold) | Open gripper |
+| `s` / `f` / `r` | End episode as success / failure / re-record |
+| `c` | Confirm re-arm after timeout safe state (hold/retreat demos) |
+
+Action semantics:
+
+- `dx`, `dy`, `dz` are discrete values in `{-1, 0, +1}`
+- `gripper` uses `0 = close`, `1 = hold`, `2 = open`
+
+While intervening, the runner logs lines such as:
+
+```text
+Intervention input: teleop=[dx=+0, dy=-1, dz=+0, gripper=1(hold)] applied=[...] state=manual
+```
+
+Notes:
+
+- Press `i` before expecting arrow keys to work.
+- MuJoCo's viewer also uses `I` for inertia-box visualization; this project hides that debug overlay automatically.
+- The runner closes the environment on exit to avoid MuJoCo shutdown crashes.
+
 ## Running with HIL RL of LeRobot
 
 ### Basic Usage

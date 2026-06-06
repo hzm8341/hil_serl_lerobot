@@ -1760,13 +1760,15 @@ class KeyboardControlWrapper(GamepadControlWrapper):
 
         logging.info("Keyboard control wrapper initialized with provided teleop_device.")
         print("Keyboard controls:")
-        print("  Arrow keys: Move in X-Y plane")
-        print("  Shift and Shift_R: Move in Z axis")
-        print("  Right Ctrl and Left Ctrl: Open and close gripper")
+        print("  Arrow Up/Down/Left/Right: Move end-effector in X-Y plane")
+        print("  Left Shift: Move down along Z axis (Z-)")
+        print("  Right Shift: Move up along Z axis (Z+)")
+        print("  Left Ctrl (hold): Close gripper")
+        print("  Right Ctrl (hold): Open gripper")
         print("  f: End episode with FAILURE")
         print("  s: End episode with SUCCESS")
         print("  r: End episode with RERECORD")
-        print("  i: Start/Stop Intervention")
+        print("  i: Start/Stop Intervention (must be ON before arrow/shift/ctrl keys take effect)")
         if self.require_manual_rearm_after_timeout:
             print("  c: Confirm and re-arm AUTO after a timeout-triggered safe state")
         if self.manual_input_timeout_s is not None:
@@ -1786,6 +1788,10 @@ class KeyboardControlWrapper(GamepadControlWrapper):
             key = self.teleop_device.misc_keys_queue.get()
             if key == "i":
                 self.is_intervention_active = not self.is_intervention_active
+                logging.info(
+                    "Intervention %s",
+                    "ENABLED" if self.is_intervention_active else "DISABLED",
+                )
             elif key == "c":
                 rearm_requested = True
             elif key == "f":
@@ -1871,6 +1877,14 @@ class KeyboardControlWrapper(GamepadControlWrapper):
             logging.info("Manual re-arm requested but AUTO is still gated by intervention state.")
         elif previous_state in {"safe_hold", "safe_retreat"} and self.control_state == "auto":
             logging.info("AUTO re-armed after operator confirmation.")
+
+        if is_intervention and _teleop_action_is_active(teleop_action):
+            logging.info(
+                "Intervention input: teleop=[%s] applied=[%s] state=%s",
+                _format_ee_action_for_log(teleop_action),
+                _format_ee_action_for_log(resolved_action),
+                self.control_state,
+            )
 
         obs, reward, terminated, truncated, info = self.env.step(resolved_action)
 
@@ -2058,6 +2072,7 @@ class HiddenCollisionPassiveViewerWrapper(gym.Wrapper):
         import mujoco.viewer
 
         super().__init__(env)
+        self._closed = False
         self._viewer = mujoco.viewer.launch_passive(
             env.unwrapped.model,
             env.unwrapped.data,
@@ -2077,6 +2092,10 @@ class HiddenCollisionPassiveViewerWrapper(gym.Wrapper):
         return observation, reward, terminated, truncated, info
 
     def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+
         base_env = self.env.unwrapped
         if hasattr(base_env, "_viewer"):
             viewer = base_env._viewer
@@ -2087,10 +2106,12 @@ class HiddenCollisionPassiveViewerWrapper(gym.Wrapper):
                     pass
             base_env._viewer = None
 
-        try:
-            self._viewer.close()
-        except Exception:
-            pass
+        if hasattr(self, "_viewer") and self._viewer is not None:
+            try:
+                self._viewer.close()
+            except Exception:
+                pass
+            self._viewer = None
 
         self.env.close()
 
@@ -2350,6 +2371,25 @@ def _teleop_action_is_active(action, atol: float = 1e-6) -> bool:
     motion_is_active = np.any(np.abs(action[:3]) > atol)
     gripper_is_active = action.size > 3 and np.any(np.abs(action[3:] - 1.0) > atol)
     return bool(motion_is_active or gripper_is_active)
+
+
+def _format_ee_action_for_log(action: np.ndarray) -> str:
+    action = np.asarray(action, dtype=np.float32).squeeze()
+    parts = [
+        f"dx={action[0]:+.0f}",
+        f"dy={action[1]:+.0f}",
+        f"dz={action[2]:+.0f}",
+    ]
+    if action.size > 3:
+        gripper = float(action[3])
+        if gripper <= 0.5:
+            gripper_label = "close"
+        elif gripper >= 1.5:
+            gripper_label = "open"
+        else:
+            gripper_label = "hold"
+        parts.append(f"gripper={gripper:.0f}({gripper_label})")
+    return ", ".join(parts)
 
 
 def _resolve_keyboard_control_state(
@@ -2678,51 +2718,55 @@ def main(cfg: EnvConfig):
         )
         exit()
 
-    env.reset()
+    try:
+        env.reset()
 
-    # Initialize the smoothed action as a random sample.
-    smoothed_action = _neutral_action_like(env.action_space.sample().detach().cpu().numpy())
-    idle_behavior = getattr(cfg, "idle_behavior", "random")
+        # Initialize the smoothed action as a random sample.
+        smoothed_action = _neutral_action_like(env.action_space.sample().detach().cpu().numpy())
+        idle_behavior = getattr(cfg, "idle_behavior", "random")
 
-    # Smoothing coefficient (alpha) defines how much of the new random sample to mix in.
-    # A value close to 0 makes the trajectory very smooth (slow to change), while a value close to 1 is less smooth.
-    alpha = 1.0
+        # Smoothing coefficient (alpha) defines how much of the new random sample to mix in.
+        # A value close to 0 makes the trajectory very smooth (slow to change), while a value close to 1 is less smooth.
+        alpha = 1.0
 
-    num_episode = 0
-    successes = []
-    while num_episode < 10:
-        start_loop_s = time.perf_counter()
-        # Sample a new random action from the robot's action space.
-        new_random_action = env.action_space.sample().detach().cpu().numpy()
-        # Update the smoothed action using an exponential moving average.
-        sampled_action = alpha * new_random_action + (1 - alpha) * smoothed_action
-        action = _resolve_idle_action(
-            current_action=smoothed_action,
-            sampled_action=sampled_action,
-            idle_behavior=idle_behavior,
-        )
+        num_episode = 0
+        successes = []
+        while num_episode < 10:
+            start_loop_s = time.perf_counter()
+            # Sample a new random action from the robot's action space.
+            new_random_action = env.action_space.sample().detach().cpu().numpy()
+            # Update the smoothed action using an exponential moving average.
+            sampled_action = alpha * new_random_action + (1 - alpha) * smoothed_action
+            action = _resolve_idle_action(
+                current_action=smoothed_action,
+                sampled_action=sampled_action,
+                idle_behavior=idle_behavior,
+            )
 
-        # Execute the step: wrap the NumPy action in a torch tensor.
-        obs, reward, terminated, truncated, info = env.step(torch.as_tensor(action, dtype=torch.float32))
-        if idle_behavior == "random":
-            smoothed_action = sampled_action
-        elif info.get("is_intervention") and _teleop_action_is_active(info.get("action_intervention")):
-            intervention_action = info["action_intervention"]
-            if isinstance(intervention_action, torch.Tensor):
-                intervention_action = intervention_action.detach().cpu().numpy()
-            smoothed_action = np.asarray(intervention_action, dtype=np.float32).squeeze()
+            # Execute the step: wrap the NumPy action in a torch tensor.
+            obs, reward, terminated, truncated, info = env.step(torch.as_tensor(action, dtype=torch.float32))
+            if idle_behavior == "random":
+                smoothed_action = sampled_action
+            elif info.get("is_intervention") and _teleop_action_is_active(info.get("action_intervention")):
+                intervention_action = info["action_intervention"]
+                if isinstance(intervention_action, torch.Tensor):
+                    intervention_action = intervention_action.detach().cpu().numpy()
+                smoothed_action = np.asarray(intervention_action, dtype=np.float32).squeeze()
 
-        if terminated or truncated:
-            successes.append(reward)
-            env.reset()
-            num_episode += 1
-            smoothed_action = _neutral_action_like(env.action_space.sample().detach().cpu().numpy())
+            if terminated or truncated:
+                successes.append(reward)
+                env.reset()
+                num_episode += 1
+                smoothed_action = _neutral_action_like(env.action_space.sample().detach().cpu().numpy())
 
-        dt_s = time.perf_counter() - start_loop_s
-        busy_wait(1 / cfg.fps - dt_s)
+            dt_s = time.perf_counter() - start_loop_s
+            busy_wait(1 / cfg.fps - dt_s)
 
-    logging.info(f"Success after 20 steps {successes}")
-    logging.info(f"success rate {sum(successes) / len(successes)}")
+        logging.info(f"Success after 20 steps {successes}")
+        logging.info(f"success rate {sum(successes) / len(successes)}")
+    finally:
+        logging.info("Closing environment...")
+        env.close()
 
 
 if __name__ == "__main__":

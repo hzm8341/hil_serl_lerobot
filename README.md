@@ -161,6 +161,56 @@ Useful config values:
 
 Use this demo to verify that the environment, rendering, keyboard control path, and LeRobot observation/action mapping work.
 
+## Keyboard Intervention Controls
+
+Keyboard teleoperation in `gym_manipulator.py` is **intervention-oriented**, not always-on manual control. In the smoke config, the environment keeps running automatic/random actions until you explicitly enable intervention.
+
+### Before You Start
+
+1. Wait for the MuJoCo viewer window to open.
+2. Press **`i`** once and confirm the log line `Intervention ENABLED`.
+3. Only then do the movement and gripper keys below take effect.
+4. Press **`i`** again to return to automatic control (`Intervention DISABLED`).
+
+If you skip step 2, arrow keys and Shift/Ctrl will **not** move the robot even though the simulation is running.
+
+### Key Map
+
+| Key | Action |
+| --- | --- |
+| `i` | Enable / disable human intervention |
+| `↑` `↓` `←` `→` | Move end-effector in the X-Y plane |
+| `Left Shift` (hold) | Move down along Z axis (Z-) |
+| `Right Shift` (hold) | Move up along Z axis (Z+) |
+| `Left Ctrl` (hold) | Close gripper |
+| `Right Ctrl` (hold) | Open gripper |
+| `s` | End episode as success |
+| `f` | End episode as failure |
+| `r` | Re-record the current episode |
+| `c` | Confirm re-arm to AUTO after a timeout-triggered safe state (hold/retreat demos only) |
+
+### Action Format
+
+Each intervention step sends a discrete end-effector delta:
+
+- `dx`, `dy`, `dz`: each is `-1`, `0`, or `+1`
+- `gripper`: `0 = close`, `1 = hold`, `2 = open`
+
+Example log line while intervening:
+
+```text
+Intervention input: teleop=[dx=+0, dy=-1, dz=+0, gripper=1(hold)] applied=[...] state=manual
+```
+
+### Notes
+
+- **Z axis:** use `Left Shift` for downward motion and `Right Shift` for upward motion. Keep the key held while moving.
+- **Gripper:** hold `Left Ctrl` to close and `Right Ctrl` to open. Releasing both returns to hold (`gripper=1`).
+- **MuJoCo shortcut conflict:** MuJoCo's viewer also binds `I` to inertia-box visualization. This project hides that overlay automatically after each step so it does not block teleoperation.
+- **Clean exit:** the runner calls `env.close()` on shutdown. You should see `Closing environment...` at the end instead of a segmentation fault.
+
+For safer manual demos, use `gym_hil_keyboard_hold_demo.json` or `gym_hil_keyboard_retreat_demo.json`, which add manual timeout, safe hold/retreat, and optional re-arm confirmation.
+
 ### 2. Record One Demonstration Episode
 
 This records a one-episode local dataset from the keyboard simulation path.
@@ -306,7 +356,7 @@ These files are useful for local reproduction and debugging but can become large
 ## Existing Documentation
 
 - `docs/source/hilserl_sim.mdx`: English HIL simulation guide in the LeRobot documentation style.
-- `docs/hilserl_sim_notes.html`: local Chinese notes explaining the paper images, demo commands, keyboard intervention behavior, safety timeout changes, and validation notes.
+- `docs/hilserl_sim_notes.html`: local Chinese notes explaining the paper images, demo commands, keyboard intervention key map, safety timeout changes, and validation notes.
 - `docs/img/`: images used by the local notes.
 - `docs/README.md`: documentation-build instructions for the LeRobot docs site.
 
@@ -315,6 +365,14 @@ These files are useful for local reproduction and debugging but can become large
 ### The robot moves without keyboard input
 
 This is expected for `gym_hil_keyboard_smoke.json`. The smoke config uses `idle_behavior: "random"` to demonstrate the original HIL training flow where automatic actions continue and human input intervenes only when needed. Use `gym_hil_keyboard_hold_demo.json` for a hold-by-default behavior.
+
+### Arrow keys do nothing
+
+Intervention is disabled by default. Press **`i`** first and wait for `Intervention ENABLED` in the terminal log.
+
+### Program crashes with `Segmentation fault` at exit
+
+Older runs could exit without closing the MuJoCo viewer. The current `gym_manipulator.py` closes the environment in a `finally` block. Update to the latest code and confirm you see `Closing environment...` before the process exits.
 
 ### CUDA is unavailable
 

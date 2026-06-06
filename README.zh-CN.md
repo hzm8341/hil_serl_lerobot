@@ -140,6 +140,56 @@ PY
 
 注意：这个配置保留原始 HIL-SERL smoke 风格，没有人工接管时自动动作仍可能继续执行。它适合看“自动策略 + 人工接管”的机制，不适合作为默认安全手动控制示例。
 
+## 键盘干预操作说明
+
+`gym_manipulator.py` 的键盘控制是**干预式**的，不是一启动就完全手动。在 smoke 配置下，环境会先跑自动/随机动作，只有你显式开启干预后，键盘移动和夹爪才会生效。
+
+### 使用前请先做这几步
+
+1. 等待 MuJoCo 仿真窗口打开。
+2. 先按一次 **`i`**，终端应出现 `Intervention ENABLED`。
+3. 此时方向键、Shift、Ctrl 才会控制机械臂。
+4. 再按 **`i`** 可退出干预，回到自动控制（`Intervention DISABLED`）。
+
+如果忘记按 `i`，即使仿真在运行，方向键也不会控制机械臂。
+
+### 键位表
+
+| 按键 | 作用 |
+| --- | --- |
+| `i` | 开启 / 关闭人类干预 |
+| `↑` `↓` `←` `→` | 末端在 X-Y 平面移动 |
+| `左 Shift`（按住） | 沿 Z 轴向下（Z-） |
+| `右 Shift`（按住） | 沿 Z 轴向上（Z+） |
+| `左 Ctrl`（按住） | 闭合夹爪 |
+| `右 Ctrl`（按住） | 张开夹爪 |
+| `s` | 结束 episode，标记成功 |
+| `f` | 结束 episode，标记失败 |
+| `r` | 重录当前 episode |
+| `c` | 超时进入安全态后，确认恢复 AUTO（仅 hold/retreat demo） |
+
+### 动作格式
+
+每次干预发送离散末端增量：
+
+- `dx`、`dy`、`dz`：取值为 `-1`、`0`、`+1`
+- `gripper`：`0=闭合`，`1=保持`，`2=张开`
+
+干预时的日志示例：
+
+```text
+Intervention input: teleop=[dx=+0, dy=-1, dz=+0, gripper=1(hold)] applied=[...] state=manual
+```
+
+### 补充说明
+
+- **Z 轴：** `左 Shift` 向下，`右 Shift` 向上，移动时需要按住。
+- **夹爪：** 按住 `左 Ctrl` 闭合，按住 `右 Ctrl` 张开；都松开时保持当前状态（`gripper=1`）。
+- **MuJoCo 快捷键冲突：** MuJoCo 查看器里 `I` 键默认会显示惯性盒。本项目会在每步后自动隐藏该调试显示，避免干扰操作。
+- **正常退出：** 程序结束时会打印 `Closing environment...` 并关闭环境，避免段错误。
+
+更接近安全生产演示时，请使用 `gym_hil_keyboard_hold_demo.json` 或 `gym_hil_keyboard_retreat_demo.json`，它们支持超时保持/退让和人工确认恢复。
+
 ### 2. 录制一个 Episode
 
 ```bash
@@ -245,6 +295,14 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/python -m pytest \
 
 `gym_hil_keyboard_smoke.json` 使用 `idle_behavior: "random"`，这是为了展示原始 HIL 训练流程：自动策略持续运行，人类只在需要时接管。如果希望不输入时保持静止，请使用 `gym_hil_keyboard_hold_demo.json`。
 
+### 方向键没反应怎么办？
+
+默认没有开启干预。请先按 **`i`**，看到 `Intervention ENABLED` 后再操作。
+
+### 程序退出时段错误（Segmentation fault）
+
+旧版本可能在退出时没有关闭 MuJoCo 查看器。请更新到当前代码，并确认退出前终端出现 `Closing environment...`。
+
 ### CUDA 不可用怎么办？
 
 当前配置默认 `"device": "cuda"`。如果只能使用 CPU，可以把配置里的 device 改为 `"cpu"`，但仿真和视觉策略会明显变慢。
@@ -266,7 +324,7 @@ outputs/hilserl_sim/
 ## 相关文档
 
 - `docs/source/hilserl_sim.mdx`：英文 HIL 仿真教程。
-- `docs/hilserl_sim_notes.html`：中文复现和分析笔记。
+- `docs/hilserl_sim_notes.html`：中文复现和分析笔记，含完整键盘干预键位说明。
 - `docs/img/`：说明图片。
 - `docs/README.md`：LeRobot 文档站构建说明。
 

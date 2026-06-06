@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LeRobot Policies 算法学习指南</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --paper: #ffffff;
+      --ink: #1e293b;
+      --muted: #64748b;
+      --line: #cbd5e1;
+      --accent: #1e40af;
+      --accent-2: #0f766e;
+      --accent-3: #7c3aed;
+      --code: #f1f5f9;
+      --warn: #b45309;
+      --good: #15803d;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 0%, #dbeafe 0, transparent 35%),
+        radial-gradient(circle at 90% 10%, #ccfbf1 0, transparent 30%),
+        linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+      color: var(--ink);
+      font: 16px/1.75 "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 40px 20px 100px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #312e81 0%, #4338ca 45%, #0891b2 100%);
+      color: #f8fafc;
+      border-radius: 22px;
+      padding: 36px 32px;
+      box-shadow: 0 24px 60px rgba(67, 56, 202, 0.2);
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 920px;
+      color: rgba(248, 250, 252, 0.92);
+      font-size: 17px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .meta span {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .toc, section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 28px 28px 22px;
+      margin-top: 24px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    h2 {
+      font-size: 26px;
+      margin: 0 0 16px;
+      color: var(--accent);
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: 19px;
+      margin: 24px 0 12px;
+      color: var(--accent-2);
+      line-height: 1.35;
+    }
+
+    h4 {
+      font-size: 16px;
+      margin: 18px 0 8px;
+      color: var(--accent-3);
+    }
+
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 0 0 16px 22px; padding: 0; }
+    li { margin: 6px 0; }
+
+    .toc ol {
+      columns: 2;
+      column-gap: 32px;
+    }
+
+    .callout, .warn, .good {
+      border-left: 5px solid;
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin: 16px 0;
+    }
+
+    .callout {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .warn {
+      border-color: #d97706;
+      background: #fffbeb;
+      color: var(--warn);
+    }
+
+    .good {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      color: var(--good);
+    }
+
+    code {
+      background: var(--code);
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 1px 7px;
+      font: 0.92em/1.6 "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
+    }
+
+    pre {
+      margin: 14px 0 18px;
+      padding: 18px;
+      border-radius: 14px;
+      overflow: auto;
+      background: #0f172a;
+      color: #e2e8f0;
+      border: 1px solid #1e293b;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    pre code {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      color: inherit;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .card h4 { margin-top: 0; }
+
+    .mini { color: var(--muted); font-size: 14px; }
+
+    .diagram {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    .tag-il { background: #dbeafe; color: #1d4ed8; }
+    .tag-rl { background: #fce7f3; color: #be185d; }
+    .tag-vla { background: #ede9fe; color: #6d28d9; }
+    .tag-hybrid { background: #fef3c7; color: #b45309; }
+
+    .ascii {
+      font-family: "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .footer {
+      color: var(--muted);
+      text-align: center;
+      margin-top: 32px;
+      font-size: 14px;
+    }
+
+    .nav-link {
+      color: rgba(248, 250, 252, 0.85);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>LeRobot Policies 算法学习指南</h1>
+      <p>
+        本文档整理 <code>src/lerobot/policies/</code> 下各算法的定位、与 RL 的关系，
+        以及 ACT / Diffusion / VQ-BeT 的架构差异，便于后期查阅与学习。
+        配套阅读：<a class="nav-link" href="lerobot_architecture.html">LeRobot 项目架构与 Pipeline</a>
+      </p>
+      <div class="meta">
+        <span>源码路径：src/lerobot/policies/</span>
+        <span>工厂入口：policies/factory.py</span>
+        <span>更新：2026-06</span>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <h2>目录</h2>
+      <ol>
+        <li><a href="#overview">Policies 文件夹总览</a></li>
+        <li><a href="#il-vs-rl">IL 与 RL：两条独立管线</a></li>
+        <li><a href="#hilserl">HIL-SERL 如何结合示范数据</a></li>
+        <li><a href="#vla">pi0 / smolvla：VLA 模仿学习</a></li>
+        <li><a href="#il-three">ACT / Diffusion / VQ-BeT 对比</a></li>
+        <li><a href="#act-arch">ACT 架构详解</a></li>
+        <li><a href="#diffusion-arch">Diffusion 架构详解</a></li>
+        <li><a href="#vqbet-arch">VQ-BeT 架构详解</a></li>
+        <li><a href="#vision-enc">视觉编码差异</a></li>
+        <li><a href="#choose">算法选型建议</a></li>
+        <li><a href="#refs">关键源码索引</a></li>
+      </ol>
+    </nav>
+
+    <!-- 1. Overview -->
+    <section id="overview">
+      <h2>1. Policies 文件夹总览</h2>
+      <p>
+        <code>policies/</code> 是 LeRobot 的<strong>策略算法库</strong>。所有策略继承
+        <code>PreTrainedPolicy</code>，通过 <code>factory.py</code> 统一创建，
+        并实现相同的推理接口 <code>select_action(batch)</code>。
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>type</th>
+            <th>类别</th>
+            <th>核心文件</th>
+            <th>训练入口</th>
+            <th>典型场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>act</code></td>
+            <td><span class="tag tag-il">IL</span></td>
+            <td><code>policies/act/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>双臂/单臂模仿，action chunking</td>
+          </tr>
+          <tr>
+            <td><code>diffusion</code></td>
+            <td><span class="tag tag-il">IL</span></td>
+            <td><code>policies/diffusion/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>视觉模仿，多模态动作分布</td>
+          </tr>
+          <tr>
+            <td><code>vqbet</code></td>
+            <td><span class="tag tag-il">IL</span></td>
+            <td><code>policies/vqbet/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>离散行为 token + offset</td>
+          </tr>
+          <tr>
+            <td><code>tdmpc</code></td>
+            <td><span class="tag tag-hybrid">IL/RL</span></td>
+            <td><code>policies/tdmpc/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>仿真控制，模型预测</td>
+          </tr>
+          <tr>
+            <td><code>pi0</code></td>
+            <td><span class="tag tag-vla">VLA</span></td>
+            <td><code>policies/pi0/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>PaliGemma + Expert，大模型 VLA</td>
+          </tr>
+          <tr>
+            <td><code>pi0fast</code></td>
+            <td><span class="tag tag-vla">VLA</span></td>
+            <td><code>policies/pi0fast/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>π0 快速推理变体</td>
+          </tr>
+          <tr>
+            <td><code>smolvla</code></td>
+            <td><span class="tag tag-vla">VLA</span></td>
+            <td><code>policies/smolvla/</code></td>
+            <td><code>lerobot-train</code></td>
+            <td>SmolVLM 轻量 VLA，边缘部署</td>
+          </tr>
+          <tr>
+            <td><code>sac</code></td>
+            <td><span class="tag tag-rl">RL</span></td>
+            <td><code>policies/sac/</code></td>
+            <td><code>rl/learner.py</code></td>
+            <td>HIL-SERL 在线 RL</td>
+          </tr>
+          <tr>
+            <td><code>reward_classifier</code></td>
+            <td><span class="tag tag-rl">RL</span></td>
+            <td><code>policies/sac/reward_model/</code></td>
+            <td>单独训练</td>
+            <td>稀疏奖励，HIL-SERL</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>核心结论：</strong>
+        <code>policies/</code> 不是「所有算法都参与 RL」，而是把 IL、VLA、RL 等多种范式
+        放在同一套接口下。pi0、smolvla、act 等用于模仿学习；sac 用于 HIL-SERL 强化学习。
+      </div>
+    </section>
+
+    <!-- 2. IL vs RL -->
+    <section id="il-vs-rl">
+      <h2>2. IL 与 RL：两条独立管线</h2>
+
+      <div class="diagram">
+        <div class="mermaid">
+flowchart TB
+    subgraph IL["Pipeline A/B：模仿学习 (lerobot-train)"]
+        IL1["pi0 / smolvla / act / diffusion / vqbet"]
+        IL2["监督学习：policy.forward(batch) → loss"]
+        IL3["离线 dataset 训练"]
+        IL1 --> IL2 --> IL3
+    end
+
+    subgraph RL["Pipeline C：HIL-SERL (rl/learner + rl/actor)"]
+        RL1["sac + reward_classifier"]
+        RL2["SAC critic/actor/temperature loss"]
+        RL3["在线 replay + 离线 replay 混合"]
+        RL1 --> RL2 --> RL3
+    end
+
+    DATA["共用：record / LeRobotDataset / select_action"]
+    IL --> DATA
+    RL --> DATA
+        </div>
+      </div>
+
+      <h3>模仿学习（IL / VLA）</h3>
+      <ul>
+        <li>从 demonstration 学习 <code>obs → action</code> 映射</li>
+        <li>训练入口：<code>python -m lerobot.scripts.train</code></li>
+        <li>损失：行为克隆（L1、MSE、Focal loss 等）</li>
+        <li>无 critic、无 reward、无 exploration</li>
+      </ul>
+
+      <h3>强化学习（RL）</h3>
+      <ul>
+        <li>在环境中 trial-and-error，优化累积 reward</li>
+        <li>训练入口：<code>rl/learner.py</code> + <code>rl/actor.py</code>（分布式 Actor-Learner）</li>
+        <li>核心算法：Soft Actor-Critic（SAC）</li>
+        <li>支持人类在环干预（Human-in-the-Loop）</li>
+      </ul>
+
+      <div class="warn">
+        <strong>重要：</strong>
+        pi0、smolvla 等 VLA <strong>没有</strong>与 SAC 做算法级融合——不会把 pi0 当作 SAC 的 actor，
+        也不会对 pi0 做 policy gradient。若要做「VLA 预训练 + RL 微调」，需自行设计桥接方案，
+        本仓库尚未内置。
+      </div>
+    </section>
+
+    <!-- 3. HIL-SERL -->
+    <section id="hilserl">
+      <h2>3. HIL-SERL 如何结合示范数据</h2>
+      <p>
+        HIL-SERL 把人类示范当作 RL 的<strong>前置准备</strong>，在数据流层面与 IL 衔接，
+        而非把 IL 模型嵌入 RL 网络。
+      </p>
+
+      <div class="diagram">
+        <div class="mermaid">
+flowchart TB
+    subgraph Actor["Actor 进程 (rl/actor.py)"]
+        ENV["gym_manipulator 真机/仿真"]
+        SAC["SACPolicy.select_action()"]
+        HUMAN["人类干预 gamepad/keyboard"]
+        ENV --> SAC
+        HUMAN -->|覆盖动作| ENV
+        SAC --> TRANS["收集 transition"]
+    end
+
+    subgraph Learner["Learner 进程 (rl/learner.py)"]
+        RB_ON["Online ReplayBuffer"]
+        RB_OFF["Offline ReplayBuffer（示范数据）"]
+        UPDATE["SAC 更新 critic/actor"]
+        RB_ON --> UPDATE
+        RB_OFF --> UPDATE
+    end
+
+    TRANS -->|gRPC| RB_ON
+    UPDATE -->|同步参数| SAC
+        </div>
+      </div>
+
+      <h3>工作流阶段</h3>
+      <ol>
+        <li><strong>示范采集</strong>：用 <code>gym_manipulator</code> + 遥操作采集 demonstration（与 IL 共用数据格式）</li>
+        <li><strong>奖励分类器</strong>（可选）：用示范训练 <code>reward_classifier</code>，自动判断成功/失败</li>
+        <li><strong>混合训练 SAC</strong>：示范预填充 offline replay buffer；Actor 在线采集填入 online buffer；Learner 各采一半 batch 混合训练</li>
+        <li><strong>人类干预</strong>：训练过程中可随时接管，干预数据同样写入 replay buffer</li>
+      </ol>
+
+      <pre><code># learner.py 核心逻辑（简化）
+if cfg.dataset is not None:
+    offline_replay_buffer = initialize_offline_replay_buffer(...)
+    batch_size = batch_size // 2  # 从两个 buffer 各采一半
+
+batch = next(online_iterator)
+batch_offline = next(offline_iterator)
+batch = concatenate_batch_transitions(batch, batch_offline)
+
+critic_output = policy.forward(forward_batch, model="critic")
+loss_critic.backward()
+optimizers["critic"].step()</code></pre>
+    </section>
+
+    <!-- 4. VLA -->
+    <section id="vla">
+      <h2>4. pi0 / smolvla：VLA 模仿学习</h2>
+      <p>
+        这两个文件夹存在，是因为 LeRobot 要支持<strong>大模型时代的机器人模仿学习</strong>——
+        用预训练 VLA 在少量示范上微调，比从零训练 act 更容易泛化到新任务。
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>文件夹</th><th>算法</th><th>来源</th><th>骨干网络</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>policies/pi0/</code></td>
+            <td>π0 — Flow Matching VLA</td>
+            <td>Physical Intelligence，HF 从 JAX 移植</td>
+            <td>PaliGemma-3B + Gemma Expert</td>
+          </tr>
+          <tr>
+            <td><code>policies/smolvla/</code></td>
+            <td>SmolVLA — 轻量 VLA</td>
+            <td>Hugging Face 自研</td>
+            <td>SmolVLM（~450M）+ Action Expert</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>输入与输出</h3>
+      <ul>
+        <li><strong>输入</strong>：多相机图像 + 机器人状态 + 自然语言任务描述（如 <code>"pick up the cube"</code>）</li>
+        <li><strong>输出</strong>：action chunk（默认 chunk_size=50，内部维护 action queue）</li>
+        <li><strong>训练</strong>：监督学习 / flow matching，非 RL</li>
+      </ul>
+
+      <h3>典型微调命令</h3>
+      <pre><code># SmolVLA
+python -m lerobot.scripts.train \
+  --policy.path=lerobot/smolvla_base \
+  --dataset.repo_id=你的数据集 \
+  --batch_size=64 \
+  --steps=20000
+
+# π0
+python -m lerobot.scripts.train \
+  --policy.path=lerobot/pi0 \
+  --dataset.repo_id=你的数据集</code></pre>
+
+      <h3>与 act / diffusion 的区别</h3>
+      <table>
+        <thead>
+          <tr><th>策略</th><th>规模</th><th>语言条件</th><th>典型用途</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>act</code></td><td>小（~几十 M）</td><td>否</td><td>固定任务双臂操作</td></tr>
+          <tr><td><code>diffusion</code></td><td>中</td><td>否</td><td>视觉模仿</td></tr>
+          <tr><td><code>pi0</code></td><td>大（~3B+）</td><td>是</td><td>通用机器人控制，多任务泛化</td></tr>
+          <tr><td><code>smolvla</code></td><td>中（~450M）</td><td>是</td><td>轻量 VLA，边缘部署</td></tr>
+        </tbody>
+      </table>
+
+      <div class="good">
+        <strong>使用注意：</strong>
+        需安装额外依赖 <code>pip install -e ".[pi0]"</code> 或 <code>pip install -e ".[smolvla]"</code>；
+        推理时需注入 <code>task</code> 字符串；支持异步远程推理（<code>policy_server</code>）。
+      </div>
+    </section>
+
+    <!-- 5. IL three comparison -->
+    <section id="il-three">
+      <h2>5. ACT / Diffusion / VQ-BeT 对比</h2>
+      <p>
+        三者都属于模仿学习，都支持 <strong>action chunking</strong>（一次预测多步动作），
+        但<strong>动作生成机制</strong>和<strong>核心网络结构</strong>差异很大。
+      </p>
+
+      <div class="diagram">
+        <div class="mermaid">
+flowchart TB
+    subgraph ACT["ACT — Transformer 直接回归"]
+        A1["ResNet 图像 feature map"] --> A2["Transformer Encoder-Decoder"]
+        A3["可选 VAE 编码动作"] --> A2
+        A2 --> A4["直接输出 action chunk (L1)"]
+    end
+
+    subgraph Diff["Diffusion — 扩散去噪"]
+        D1["ResNet + SpatialSoftmax"] --> D2["全局条件向量"]
+        D3["随机噪声 action 轨迹"] --> D4["1D Conditional UNet"]
+        D2 --> D4
+        D4 --> D5["迭代去噪 → action chunk"]
+    end
+
+    subgraph VQ["VQ-BeT — 离散 token + offset"]
+        V1["ResNet + SpatialSoftmax"] --> V2["GPT / minGPT"]
+        V3["Residual VQ-VAE 码本"] --> V4["Code + Offset 预测"]
+        V2 --> V4
+        V4 --> V5["解码 + offset → action chunk"]
+    end
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th><strong>ACT</strong></th>
+            <th><strong>Diffusion</strong></th>
+            <th><strong>VQ-BeT</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>论文</td>
+            <td>Action Chunking Transformer (Aloha)</td>
+            <td>Diffusion Policy (PushT 等)</td>
+            <td>Behavior Generation with Latent Actions</td>
+          </tr>
+          <tr>
+            <td>动作表示</td>
+            <td>连续向量，直接回归</td>
+            <td>连续轨迹，扩散去噪</td>
+            <td><strong>离散 code + 连续 offset</strong></td>
+          </tr>
+          <tr>
+            <td>核心网络</td>
+            <td>Transformer Encoder-Decoder</td>
+            <td>1D Conditional UNet</td>
+            <td>GPT + Residual VQ-VAE</td>
+          </tr>
+          <tr>
+            <td>视觉编码</td>
+            <td>ResNet → 2D feature map token</td>
+            <td>ResNet → SpatialSoftmax 关键点</td>
+            <td>同 Diffusion</td>
+          </tr>
+          <tr>
+            <td>时序建模</td>
+            <td>单步观测为主（n_obs_steps=1）</td>
+            <td>多步观测历史（通常 n_obs_steps=2）</td>
+            <td>多步观测 + action query token</td>
+          </tr>
+          <tr>
+            <td>训练目标</td>
+            <td>L1（+ 可选 VAE KL）</td>
+            <td>MSE 预测噪声/样本</td>
+            <td>Focal loss（code）+ L1（offset）</td>
+          </tr>
+          <tr>
+            <td>推理方式</td>
+            <td>一次前向</td>
+            <td>多步迭代去噪（~100 步）</td>
+            <td>一次前向 + code 采样</td>
+          </tr>
+          <tr>
+            <td>训练阶段</td>
+            <td>单阶段</td>
+            <td>单阶段</td>
+            <td><strong>两阶段</strong>（先 RVQ，再 GPT）</td>
+          </tr>
+          <tr>
+            <td>典型场景</td>
+            <td>双臂精细操作（Aloha）</td>
+            <td>视觉推动、多模态任务</td>
+            <td>PushT，离散行为建模</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>一句话总结：</strong>
+        ACT 用 Transformer <strong>直接回归</strong>动作；
+        Diffusion 用 UNet <strong>迭代去噪</strong>生成轨迹；
+        VQ-BeT 先用 VQ <strong>离散化</strong>动作，再用 GPT <strong>预测 token + offset</strong>。
+      </div>
+    </section>
+
+    <!-- 6. ACT arch -->
+    <section id="act-arch">
+      <h2>6. ACT 架构详解</h2>
+      <p><strong>思路：</strong>观测 → Transformer → 直接输出一段连续动作，最简单直接。</p>
+
+      <div class="ascii">图像 ──► ResNet backbone ──► 2D feature map tokens ──┐
+状态 ──► Linear 投影 ─────────────────────────────────┤
+                                                      ├──► Transformer Encoder
+训练时：动作序列 ──► VAE Encoder ──► latent z ────────┘         │
+                                                      Transformer Decoder
+                                                              │
+                                                              ▼
+                                                    action chunk (chunk_size 步)</div>
+
+      <h3>关键组件（modeling_act.py → ACT 类）</h3>
+      <ul>
+        <li><strong>ResNet backbone</strong>：提取 layer4 feature map，每个空间位置作为一个 token</li>
+        <li><strong>Transformer Encoder-Decoder</strong>：Cross-Attention 解码，图像 token + latent 条件</li>
+        <li><strong>可选 CVAE</strong>：训练时用 VAE encoder 编码目标动作序列，引入随机 latent；推理时只用 Decoder</li>
+        <li><strong>Temporal Ensembling</strong>（可选）：多次预测做指数加权平均，平滑执行</li>
+      </ul>
+
+      <h3>损失函数</h3>
+      <pre><code>loss = L1(action_pred, action_gt) + kl_weight * KL   # use_vae=True 时
+loss = L1(action_pred, action_gt)                   # use_vae=False 时</code></pre>
+    </section>
+
+    <!-- 7. Diffusion arch -->
+    <section id="diffusion-arch">
+      <h2>7. Diffusion 架构详解</h2>
+      <p><strong>思路：</strong>把动作轨迹当作「图像」，用扩散过程从噪声逐步去噪生成。</p>
+
+      <div class="ascii">多步观测 (state + 图像) ──► ResNet + SpatialSoftmax ──► global_cond
+                                                              │
+随机噪声 [horizon × action_dim] ──────────────────────────────┤
+                                                              ▼
+                                                    1D Conditional UNet
+                                                    (在 horizon 维度做 conv)
+                                                              │
+                                         迭代 T 步 DDPM/DDIM 去噪
+                                                              ▼
+                                                    action chunk</div>
+
+      <h3>关键组件（modeling_diffusion.py → DiffusionModel 类）</h3>
+      <ul>
+        <li><strong>SpatialSoftmax</strong>：2D 特征图 → 少量关键点坐标（如 32 个），比 ACT 更紧凑</li>
+        <li><strong>1D Conditional UNet</strong>：在 <code>horizon</code> 维度做 1D 卷积，以 <code>global_cond</code> 为条件</li>
+        <li><strong>多步观测</strong>：缓存 <code>n_obs_steps</code> 步历史观测再条件化</li>
+        <li><strong>DDPM/DDIM Scheduler</strong>：训练加噪、推理去噪</li>
+      </ul>
+
+      <h3>训练 vs 推理</h3>
+      <ul>
+        <li><strong>训练</strong>：对干净轨迹加噪，预测噪声 ε（MSE loss）</li>
+        <li><strong>推理</strong>：从纯噪声出发，迭代去噪（默认 ~100 步），比 ACT 慢</li>
+      </ul>
+
+      <pre><code># 推理核心循环（简化）
+sample = torch.randn(batch, horizon, action_dim)
+for t in scheduler.timesteps:
+    pred = unet(sample, t, global_cond=global_cond)
+    sample = scheduler.step(pred, t, sample).prev_sample</code></pre>
+    </section>
+
+    <!-- 8. VQ-BeT arch -->
+    <section id="vqbet-arch">
+      <h2>8. VQ-BeT 架构详解</h2>
+      <p>
+        <strong>思路：</strong>先把连续动作离散化成「行为 token」，再用 GPT 预测 token，
+        并对每个 token 预测连续 offset 做精修。
+      </p>
+
+      <h3>阶段 1 — 动作离散化（Residual VQ-VAE）</h3>
+      <div class="ascii">action chunk ──► RVQ Encoder ──► 残差码本量化 ──► RVQ Decoder ──► 重建动作</div>
+      <p class="mini">学习动作的「字典」，把连续动作映射到有限 code。训练 <code>n_vqvae_training_steps</code> 步后冻结码本。</p>
+
+      <h3>阶段 2 — 行为生成（GPT + Action Head）</h3>
+      <div class="ascii">历史观测 (图像token + 状态token + action_query_token)
+                    │
+                    ▼
+              GPT (minGPT)
+                    │
+          ┌─────────┴─────────┐
+          ▼                   ▼
+    Code 预测头            Offset 预测头
+    (Focal Loss)           (L1 Loss)
+          │                   │
+          └─────────┬─────────┘
+                    ▼
+         RVQ Decoder(code) + offset → action chunk</div>
+
+      <h3>关键组件（modeling_vqbet.py）</h3>
+      <ul>
+        <li><strong>Action Query Token</strong>：可学习 prompt，从观测序列中「查询」动作</li>
+        <li><strong>GPT (minGPT)</strong>：自回归序列模型，seq2seq 预测</li>
+        <li><strong>VQBeTHead</strong>：bin 预测（分类）+ offset 预测（回归）+ RVQ 解码</li>
+        <li><strong>混合表示</strong>：粗粒度离散 code + 细粒度连续 offset</li>
+      </ul>
+    </section>
+
+    <!-- 9. Vision encoding -->
+    <section id="vision-enc">
+      <h2>9. 视觉编码差异</h2>
+      <p>三者都用 ResNet，但用法不同——这是架构上容易忽略的细节。</p>
+
+      <table>
+        <thead>
+          <tr><th>策略</th><th>视觉特征形式</th><th>信息保留</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ACT</strong></td>
+            <td>ResNet layer4 完整 2D feature map，每个空间位置一个 token</td>
+            <td>最丰富，token 数最多</td>
+          </tr>
+          <tr>
+            <td><strong>Diffusion</strong></td>
+            <td>ResNet → SpatialSoftmax → 每通道一个 (x,y) 关键点</td>
+            <td>压缩为少量坐标</td>
+          </tr>
+          <tr>
+            <td><strong>VQ-BeT</strong></td>
+            <td>同 Diffusion，SpatialSoftmax → MLP 投影为 GPT token</td>
+            <td>同 Diffusion</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        ACT 保留更多空间细节，适合精细双臂操作；
+        Diffusion / VQ-BeT 更紧凑，计算更轻。
+      </p>
+
+      <h3>Action Chunking 执行（三者共性）</h3>
+      <ol>
+        <li>一次预测 <code>chunk_size</code>（或 <code>horizon</code>）步动作</li>
+        <li>逐步从 queue 中取出执行</li>
+        <li>queue 空时再重新预测</li>
+      </ol>
+      <p class="mini">差异只在「如何生成」chunk：ACT 一次前向；Diffusion 多次 UNet 去噪；VQ-BeT GPT 前向 + code 采样。</p>
+    </section>
+
+    <!-- 10. Choose -->
+    <section id="choose">
+      <h2>10. 算法选型建议</h2>
+
+      <div class="grid">
+        <article class="card">
+          <h4>双臂 Aloha 精细操作，要快推理</h4>
+          <p>推荐 <span class="tag tag-il">ACT</span></p>
+        </article>
+        <article class="card">
+          <h4>多模态动作分布（同一 obs 多种合理动作）</h4>
+          <p>推荐 <span class="tag tag-il">Diffusion</span> 或 ACT+CVAE</p>
+        </article>
+        <article class="card">
+          <h4>动作有明显模式/阶段、离散行为结构</h4>
+          <p>推荐 <span class="tag tag-il">VQ-BeT</span></p>
+        </article>
+        <article class="card">
+          <h4>语言条件、多任务泛化</h4>
+          <p>推荐 <span class="tag tag-vla">pi0</span> / <span class="tag tag-vla">smolvla</span></p>
+        </article>
+        <article class="card">
+          <h4>真机在线精调、人类兜底</h4>
+          <p>推荐 <span class="tag tag-rl">SAC</span>（HIL-SERL）</p>
+        </article>
+        <article class="card">
+          <h4>推理延迟敏感</h4>
+          <p>ACT &gt; VQ-BeT &gt; Diffusion</p>
+        </article>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>需求</th><th>推荐算法</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>数据量少、动作分布简单</td><td>ACT</td></tr>
+          <tr><td>数据量大、复杂轨迹分布</td><td>Diffusion</td></tr>
+          <tr><td>需要语言指令控制任务</td><td>pi0 / smolvla</td></tr>
+          <tr><td>稀疏奖励、需在线探索</td><td>SAC + reward_classifier</td></tr>
+          <tr><td>仿真模型预测控制</td><td>tdmpc</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 11. Refs -->
+    <section id="refs">
+      <h2>11. 关键源码索引</h2>
+
+      <div class="grid">
+        <article class="card">
+          <h4>工厂与基类</h4>
+          <ul>
+            <li><code>policies/factory.py</code> — get_policy_class / make_policy</li>
+            <li><code>policies/pretrained.py</code> — PreTrainedPolicy 基类</li>
+            <li><code>policies/normalize.py</code> — 输入输出归一化</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h4>IL 策略</h4>
+          <ul>
+            <li><code>policies/act/modeling_act.py</code></li>
+            <li><code>policies/diffusion/modeling_diffusion.py</code></li>
+            <li><code>policies/vqbet/modeling_vqbet.py</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h4>VLA 策略</h4>
+          <ul>
+            <li><code>policies/pi0/modeling_pi0.py</code></li>
+            <li><code>policies/smolvla/modeling_smolvla.py</code></li>
+            <li><code>docs/source/smolvla.mdx</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h4>RL 策略</h4>
+          <ul>
+            <li><code>policies/sac/modeling_sac.py</code></li>
+            <li><code>scripts/rl/learner.py</code></li>
+            <li><code>scripts/rl/actor.py</code></li>
+            <li><code>docs/source/hilserl.mdx</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h4>训练与推理</h4>
+          <ul>
+            <li><code>scripts/train.py</code> — IL 训练循环</li>
+            <li><code>scripts/eval.py</code> — 仿真评估</li>
+            <li><code>utils/control_utils.py</code> — 真机 predict_action</li>
+            <li><code>scripts/server/policy_server.py</code> — 异步远程推理</li>
+          </ul>
+        </article>
+      </div>
+
+      <h3>相关文档</h3>
+      <ul>
+        <li><a href="lerobot_architecture.html">lerobot_architecture.html</a> — 完整项目架构与 Pipeline</li>
+        <li><a href="hilserl_sim_notes.html">hilserl_sim_notes.html</a> — HIL-SERL 仿真配置笔记</li>
+        <li><a href="https://huggingface.co/docs/lerobot/hilserl">HIL-SERL 官方文档</a></li>
+        <li><a href="https://huggingface.co/docs/lerobot/smolvla">SmolVLA 微调指南</a></li>
+      </ul>
+    </section>
+
+    <p class="footer">
+      LeRobot Policies 算法学习指南 · 路径：<code>docs/lerobot_policies_guide.html</code>
+    </p>
+  </main>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      flowchart: { curve: 'basis', padding: 16 },
+      sequence: { actorMargin: 60 },
+    });
+  </script>
+</body>
+</html>

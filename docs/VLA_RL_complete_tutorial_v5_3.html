@@ -1,0 +1,2816 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>VLA + RL 完整学习教程 V5.3</title>
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\\[','\\]']]},
+  svg: {fontCache: 'global'}
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root{
+  --fg:#1f2937; --muted:#6b7280; --bg:#ffffff; --panel:#f8fafc;
+  --line:#e5e7eb; --blue:#0f6b8f; --green:#0f766e; --red:#b91c1c;
+  --code:#0f172a; --codebg:#f1f5f9;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--fg); background:var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+  line-height:1.72;
+}
+header{
+  padding:44px 52px 34px; background:linear-gradient(135deg,#e0f2fe,#f8fafc);
+  border-bottom:1px solid var(--line);
+}
+header h1{margin:0 0 12px;font-size:34px;color:#075985;line-height:1.25}
+header p{margin:6px 0;color:#334155;font-size:16px}
+.container{display:flex;align-items:flex-start}
+nav{
+  position:sticky; top:0; width:310px; max-height:100vh; overflow:auto;
+  padding:24px 20px; border-right:1px solid var(--line); background:#fbfdff;
+}
+nav h2{font-size:15px;margin:0 0 10px;color:#0f6b8f}
+nav a{display:block;text-decoration:none;color:#334155;font-size:13px;padding:4px 0}
+nav a:hover{color:#0369a1;text-decoration:underline}
+main{max-width:1060px;padding:34px 52px 80px}
+h1,h2,h3,h4{line-height:1.35}
+h2{margin-top:42px;padding-top:18px;border-top:2px solid #dbeafe;color:#075985;font-size:28px}
+h3{margin-top:30px;color:#0f6b8f;font-size:22px}
+h4{margin-top:20px;color:#0f766e;font-size:18px}
+p{margin:10px 0}
+ul,ol{padding-left:24px}
+li{margin:4px 0}
+blockquote{
+  border-left:4px solid #38bdf8;background:#f0f9ff;margin:16px 0;padding:10px 14px;color:#0f172a
+}
+code,pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
+pre{
+  background:var(--codebg); border:1px solid var(--line); border-radius:8px;
+  padding:12px 14px; overflow:auto; color:var(--code); line-height:1.55
+}
+.inline-code{background:#eef2ff;border:1px solid #e0e7ff;border-radius:4px;padding:1px 5px}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:8px 10px;vertical-align:top}
+th{background:#eff6ff;color:#0f3f5f}
+.badge{display:inline-block;border-radius:999px;padding:2px 9px;background:#e0f2fe;color:#075985;font-size:12px;margin-right:6px}
+.note{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;margin:14px 0}
+.goal{background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;padding:14px 16px;margin:14px 0}
+.check{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:14px 0}
+.small{font-size:13px;color:var(--muted)}
+hr{border:none;border-top:1px solid var(--line);margin:28px 0}
+
+/* V5.3 navigation and advanced-section polish */
+main section{scroll-margin-top:18px;}
+main section[id^="dp_"], main section[id^="fm_"],
+main section[id$="_full"], main section[id="advanced-dp-fm"],
+main section[id="lingbot-vla-rl-design"], main section[id="groot-n15-rl-design"],
+main section[id="standard-vla-rl-paradigm"]{
+  padding-bottom:10px;
+}
+.formula{
+  background:#f8fafc;border:1px solid var(--line);border-radius:10px;
+  padding:10px 14px;margin:12px 0;overflow-x:auto;
+}
+nav a{border-radius:6px;padding:4px 6px;margin-left:-6px;}
+nav a:hover{background:#e0f2fe;}
+
+@media(max-width:980px){
+  .container{display:block}
+  nav{position:relative;width:auto;max-height:none;border-right:none;border-bottom:1px solid var(--line)}
+  main{padding:24px}
+  header{padding:32px 24px}
+}
+@media print{
+  nav{display:none}
+  main{max-width:none;padding:20px}
+  header{padding:20px;background:#fff}
+  a{color:inherit}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>VLA + 强化学习完整学习教程 V5.3</h1>
+<p>面向长期学习、实验复现和项目沉淀的系统教程</p>
+<p class="small">V5 新增：课程人才培养方向 · 有模型 RL / 世界模型 · 算法选型决策树 · SO-101 组装校准实操 · HIL-SERL 代码/配置/真机验证 · Lingbot/GR00T 仿真评测模板 · 章节编号修订</p>
+</header>
+<div class="container">
+<nav><h2>目录</h2><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 基础篇</p><a href="#intro">0. 教程使用方法</a><a href="#ch1">1. VLA 范式介绍</a><a href="#ch2">2. 模仿学习的局限</a><a href="#ch3">3. RL 技术及对 VLA 的提升</a><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 理论篇</p><a href="#ch4">4. 强化学习发展背景</a><a href="#ch5">5. MDP 与 Bellman 方程</a><a href="#ch6">6. 策略梯度与 Advantage</a><a href="#ch7">7. GAE 广义优势估计</a><a href="#ch8">8. Online / Offline RL、无模型 RL 与有模型 RL</a><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 算法篇</p><a href="#ch9">9. PPO 近端策略优化</a><a href="#ch10">10. GRPO 分组相对策略优化</a><a href="#ch11">11. DPO 直接偏好优化</a><a href="#ch12">12. SAC 软演员-评论家算法</a><a href="#ch13">13. DQN 深度 Q 网络</a><a href="#ch14">14. DDPG 深度确定性策略梯度</a><a href="#ch15">15. A3C 异步优势演员-评论家</a><a href="#ch16">16. 强化学习算法选型、超参数与训练诊断</a><a href="#ch17">17. 简单验证实验</a><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 研究与行业篇</p><a href="#ch18">18. VLA + RL 研究趋势</a><a href="#ch19">19. VLA + RL 行业工作分析</a><a href="#ch19b">19.6 行业资源与学习路径汇总</a><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 实战篇</p><a href="#ch20">20. 仿真空间中的 VLA 强化学习：Reward、Sim2Real 与验证闭环</a><a href="#ch21">21. 评测基准：LIBERO / RoboTwin 等</a><a href="#ch22">22. RLiNF 项目解析方法</a><a href="#ch23">23. Lingbot-VLA + RL 学习方法</a><a href="#ch24">24. GR00T N1.5 + RL 学习方法</a><a href="#ch25">25. SO-101 真机强化学习实战</a><a href="#ch26">26. HIL-SERL 算法实操</a><a href="#ch27">27. π 系列模型训练实操</a><a href="#ch28">28. VLA + RL 求职分析与简历指导</a><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 计划与附录</p><a href="#plan">29. 12 周学习计划</a><a href="#appendix">附录：笔记模板与实验报告模板</a><p style="font-size:11px;color:#0f6b8f;font-weight:700;margin:10px 0 4px;letter-spacing:.04em">▌ 进阶扩展篇</p><a href="#advanced-dp-fm">第 30 章：VLA 中常见的 DP 与 FM 算法</a><a href="#lingbot-vla-rl-design">第 31 章：Lingbot-VLA + RL 的算法架构设计</a></nav>
+<main>
+<section id="intro">
+<h2>0. 教程使用方法</h2>
+<div class="goal">
+<strong>总目标：</strong>本教程不是普通强化学习教材，而是围绕“如何把强化学习用于 VLA 机器人操作策略优化”组织。学习目标是：既能推导核心公式，也能知道每个算法在 VLA + RL 系统中应该放在哪里。
+</div>
+<p>建议按三条主线学习：</p>
+<ol>
+<li><strong>理论线：</strong>MDP → Bellman → 策略梯度 → GAE → PPO / SAC / DQN / DPO / GRPO。</li>
+<li><strong>工程线：</strong>Gym / MuJoCo → LIBERO / RoboTwin → LeRobot / SO-101 → HIL-SERL。</li>
+<li><strong>VLA 线：</strong>VLA 初始策略 → 模仿学习 → RL 微调 → 偏好优化 → 人在环强化学习。</li>
+</ol>
+<p>每章建议输出三类成果：一页公式笔记、一份实验记录、一段项目表达。</p>
+</section>
+<section id="ch1">
+<h2>1. VLA 范式介绍</h2>
+<h3>1.1 学习目标</h3>
+<p>本章需要理解：什么是 VLA，VLA 与 VLM、LLM、传统机器人系统的区别，VLA 的输入输出形式，以及为什么 VLA 后续需要 RL。</p>
+<h3>1.2 什么是 VLA</h3>
+<p>VLA 是 <strong>Vision-Language-Action</strong>，即视觉、语言和动作统一建模。它的目标是让机器人根据视觉观察和语言指令生成可执行动作。</p>
+<pre>输入：
+- RGB 图像 / 多视角图像
+- 语言指令
+- 机器人状态，例如关节角、末端位姿、夹爪状态
+
+输出：
+- 机器人动作，例如关节位置、末端增量、夹爪开合、action chunk</pre>
+<h3>1.3 VLA 与 VLM 的区别</h3>
+<table>
+<tr><th>模型</th><th>主要能力</th><th>输出</th><th>典型问题</th></tr>
+<tr><td>VLM</td><td>看懂图像和语言</td><td>文本、类别、描述、坐标</td><td>图里有什么？目标在哪里？</td></tr>
+<tr><td>VLA</td><td>看懂并执行</td><td>机器人动作</td><td>下一步机械臂怎么动？夹爪什么时候闭合？</td></tr>
+</table>
+<p>VLA 的难点不是“看懂”，而是“做对”。机器人动作具有连续性、延迟性、物理约束和安全风险。</p>
+<h3>1.4 VLA 与传统机器人系统的区别</h3>
+<p>传统机器人系统通常是模块化：</p>
+<pre>感知 → 定位 → 规划 → 控制 → 执行</pre>
+<p>VLA 更接近端到端策略：</p>
+<pre>图像 + 语言 + 状态 → 多模态模型 → 动作</pre>
+<p>真实工程中更合理的结构是混合式：</p>
+<pre>VLA：负责任务理解、泛化和粗动作
+传统视觉：负责精确定位
+运动规划：负责安全路径
+力控 / 触觉：负责接触阶段
+状态机 / 行为树：负责流程稳定</pre>
+<h3>1.5 动作表示</h3>
+<h4>关节空间动作</h4>
+<p>\(a=[q_1,q_2,\dots,q_n,\text{gripper}]\)。优点是控制直接，缺点是跨机器人泛化差。</p>
+<h4>末端空间动作</h4>
+<p>\(a=[\Delta x,\Delta y,\Delta z,\Delta roll,\Delta pitch,\Delta yaw,\text{gripper}]\)。优点是任务直观，缺点是需要 IK 和底层控制。</p>
+<h4>Action Chunk</h4>
+<p>一次输出一段动作：\([a_t,a_{t+1},\dots,a_{t+H}]\)。优点是动作平滑、推理频率压力小；缺点是闭环纠偏变慢。</p>
+<h4>Action Token</h4>
+<p>把动作离散化为 token，适合复用语言模型序列建模能力，但精度受离散化限制。</p>
+<div class="check">
+<strong>本章作业：</strong>画出 VLA 基本架构图，并回答：VLA 为什么不是 VLM 加动作头这么简单？Action Chunk 的优缺点是什么？工业场景中 VLA 为什么需要传统控制兜底？
+</div>
+</section>
+<section id="ch2">
+<h2>2. 模仿学习的局限</h2>
+<h3>2.1 模仿学习基本形式</h3>
+<p>模仿学习的核心是学习专家数据中的映射：</p>
+<p>\[\pi_\theta(a_t|o_t)\]</p>
+<p>对于连续动作，常用 MSE 训练：</p>
+<p>\[L = \|a_{\text{pred}}-a_{\text{expert}}\|^2\]</p>
+<p>对于离散动作或 action token，常用最大似然：</p>
+<p>\[\max_\theta \log \pi_\theta(a_{\text{expert}}|o)\]</p>
+<h3>2.2 分布偏移</h3>
+<p>训练数据来自专家轨迹，测试时模型自己执行。一旦模型动作偏了一点，就会进入训练集中没有覆盖的状态。</p>
+<pre>训练状态：夹爪正好在物体上方
+测试状态：夹爪偏左 2 cm
+结果：模型可能不知道如何纠偏</pre>
+<h3>2.3 错误累积</h3>
+<p>机器人是连续序列决策。前一步小误差会改变后续观测，导致后续动作更偏。</p>
+<pre>接近偏差 → 抓取姿态偏差 → 物体被夹歪 → 放置失败</pre>
+<h3>2.4 缺少失败恢复能力</h3>
+<p>模仿学习通常只看成功数据，不知道抓偏、碰撞、掉落、卡住后如何恢复。</p>
+<h3>2.5 优化目标不等于成功率</h3>
+<p>动作 MSE 小不代表任务成功。精密操作中，2 mm 的误差就可能导致失败。因此必须引入 success rate、collision rate、intervention count 等任务级指标。</p>
+<h3>2.6 为什么需要 RL</h3>
+<table>
+<tr><th>问题</th><th>模仿学习</th><th>强化学习</th></tr>
+<tr><td>分布偏移</td><td>容易失败</td><td>可通过探索学习纠偏</td></tr>
+<tr><td>错误累积</td><td>容易放大</td><td>优化长期回报</td></tr>
+<tr><td>失败恢复</td><td>通常不足</td><td>可从失败中学习</td></tr>
+<tr><td>成功率优化</td><td>间接</td><td>直接</td></tr>
+<tr><td>接触操作</td><td>较弱</td><td>可结合力觉和 residual policy</td></tr>
+</table>
+</section>
+<section id="ch3">
+<h2>3. RL 技术及对 VLA 的提升</h2>
+<h3>3.1 RL 对 VLA 的主要价值</h3>
+<ul>
+<li><strong>优化任务成功率：</strong>RL 直接最大化 reward，而不是只拟合专家动作。</li>
+<li><strong>提升纠偏能力：</strong>策略可以学习偏差状态下如何恢复。</li>
+<li><strong>学习接触策略：</strong>结合力觉 / 触觉处理插孔、装配、推拉等任务。</li>
+<li><strong>减少人工干预：</strong>人在环 RL 可以逐步降低 intervention count。</li>
+</ul>
+<h3>3.2 RL 不能解决的问题</h3>
+<div class="warn">
+RL 不是万能药。相机标定错误、底层控制不稳定、机械结构精度不足、reward 设计错误、动作空间定义错误，都会导致 RL 学不到有效策略，甚至放大系统问题。
+</div>
+<h3>3.3 VLA + RL 的合理工程结构</h3>
+<pre>模仿学习 / VLA：提供初始策略
+RL Fine-tuning：提升成功率和纠偏能力
+DPO / GRPO：优化轨迹偏好与多轨迹选择
+SAC residual：处理连续接触微调
+状态机 / 行为树：管理任务阶段
+安全机制：限幅、急停、人工接管</pre>
+</section>
+<section id="ch4">
+<h2>4. 强化学习发展背景</h2>
+<h3>4.1 基本闭环</h3>
+<pre>Agent 观察状态 s_t
+→ 选择动作 a_t
+→ Environment 转移到 s_{t+1}
+→ 返回 reward r_t
+→ Agent 更新策略</pre>
+<h3>4.2 监督学习与强化学习对比</h3>
+<table>
+<tr><th>维度</th><th>监督学习</th><th>强化学习</th></tr>
+<tr><td>数据来源</td><td>固定数据集</td><td>与环境交互</td></tr>
+<tr><td>标签</td><td>人工标签</td><td>reward</td></tr>
+<tr><td>目标</td><td>预测准确</td><td>长期回报最大</td></tr>
+<tr><td>难点</td><td>泛化</td><td>探索、延迟奖励、稳定性</td></tr>
+<tr><td>机器人应用</td><td>模仿学习</td><td>策略优化</td></tr>
+</table>
+<h3>4.3 技术演进</h3>
+<pre>动态规划 → Q-learning / SARSA → DQN → Policy Gradient
+→ Actor-Critic → A3C / PPO → DDPG / TD3 / SAC
+→ Offline RL → RLHF / DPO / GRPO → VLA + RL</pre>
+</section>
+<section id="ch5">
+<h2>5. MDP 与 Bellman 方程</h2>
+<h3>5.1 MDP 五元组</h3>
+<p>MDP 定义为：</p>
+<p>\[M=(S,A,P,R,\gamma)\]</p>
+<table>
+<tr><th>符号</th><th>含义</th><th>机器人例子</th></tr>
+<tr><td>\(S\)</td><td>状态空间</td><td>图像、关节角、末端位姿、力觉</td></tr>
+<tr><td>\(A\)</td><td>动作空间</td><td>关节动作、末端动作、夹爪动作</td></tr>
+<tr><td>\(P\)</td><td>状态转移概率</td><td>动力学、接触、物体运动</td></tr>
+<tr><td>\(R\)</td><td>奖励函数</td><td>成功奖励、碰撞惩罚、距离奖励</td></tr>
+<tr><td>\(\gamma\)</td><td>折扣因子</td><td>当前奖励与未来奖励的权衡</td></tr>
+</table>
+<h3>5.2 轨迹与回报</h3>
+<p>轨迹：</p>
+<p>\[\tau=(s_0,a_0,r_0,s_1,a_1,r_1,\dots,s_T)\]</p>
+<p>从时间 \(t\) 开始的回报：</p>
+<p>\[G_t = r_t+\gamma r_{t+1}+\gamma^2 r_{t+2}+\cdots=\sum_{k=0}^{T-t}\gamma^k r_{t+k}\]</p>
+<h3>5.3 价值函数</h3>
+<p>状态价值函数：</p>
+<p>\[V^\pi(s)=\mathbb{E}_\pi[G_t|s_t=s]\]</p>
+<p>动作价值函数：</p>
+<p>\[Q^\pi(s,a)=\mathbb{E}_\pi[G_t|s_t=s,a_t=a]\]</p>
+<h3>5.4 Bellman 方程推导</h3>
+<p>由 \(G_t=r_t+\gamma G_{t+1}\)，可得：</p>
+<p>\[V^\pi(s)=\mathbb{E}_\pi[r_t+\gamma V^\pi(s_{t+1})|s_t=s]\]</p>
+<p>展开为：</p>
+<p>\[V^\pi(s)=\sum_a\pi(a|s)\sum_{s'}P(s'|s,a)\left[R(s,a,s')+\gamma V^\pi(s')\right]\]</p>
+<p>最优 Q 方程：</p>
+<p>\[Q^*(s,a)=\mathbb{E}\left[r+\gamma \max_{a'}Q^*(s',a')\right]\]</p>
+<h3>5.5 简单例子：一维机器人靠近目标</h3>
+<p>机器人距离目标 3 格，每走一步奖励 -1，到达目标 +10，\(\gamma=0.9\)。</p>
+<pre>距离 1 格向目标移动：Q = 10
+距离 2 格向目标移动：Q = -1 + 0.9 × 10 = 8
+距离 3 格向目标移动：Q = -1 + 0.9 × 8 = 6.2</pre>
+<p>结论：越接近目标价值越高，向目标移动的动作价值更高。</p>
+</section>
+<section id="ch6">
+<h2>6. 策略梯度与 Advantage</h2>
+<h3>6.1 策略优化目标</h3>
+<p>策略梯度直接优化策略 \(\pi_\theta(a|s)\)，目标是：</p>
+<p>\[J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}[R(\tau)]\]</p>
+<h3>6.2 推导</h3>
+<p>写成积分：</p>
+<p>\[J(\theta)=\int P_\theta(\tau)R(\tau)d\tau\]</p>
+<p>求梯度：</p>
+<p>\[\nabla_\theta J(\theta)=\int \nabla_\theta P_\theta(\tau)R(\tau)d\tau\]</p>
+<p>使用 log-derivative trick：</p>
+<p>\[\nabla_\theta P_\theta(\tau)=P_\theta(\tau)\nabla_\theta \log P_\theta(\tau)\]</p>
+<p>得到：</p>
+<p>\[\nabla_\theta J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}[\nabla_\theta\log P_\theta(\tau)R(\tau)]\]</p>
+<p>轨迹概率为：</p>
+<p>\[P_\theta(\tau)=p(s_0)\prod_t \pi_\theta(a_t|s_t)P(s_{t+1}|s_t,a_t)\]</p>
+<p>环境转移不依赖 \(\theta\)，所以：</p>
+<p>\[\nabla_\theta \log P_\theta(\tau)=\sum_t \nabla_\theta\log \pi_\theta(a_t|s_t)\]</p>
+<p>最终：</p>
+<p>\[\nabla_\theta J(\theta)=\mathbb{E}\left[\sum_t\nabla_\theta\log \pi_\theta(a_t|s_t)G_t\right]\]</p>
+<h3>6.3 Advantage</h3>
+<p>直接使用 \(G_t\) 方差较大，引入 baseline \(b(s_t)=V(s_t)\)：</p>
+<p>\[\nabla_\theta J(\theta)=\mathbb{E}\left[\sum_t\nabla_\theta\log \pi_\theta(a_t|s_t)(G_t-V(s_t))\right]\]</p>
+<p>定义：</p>
+<p>\[A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)\]</p>
+<p>含义：这个动作比当前状态下的平均动作好多少。</p>
+<h3>6.4 简单例子</h3>
+<pre>当前状态：机器人在目标左边 2 cm
+动作 1：向右移动，最终成功，A &gt; 0
+动作 2：向左移动，远离目标，A &lt; 0
+
+策略梯度结果：
+提高向右移动概率
+降低向左移动概率</pre>
+</section>
+<section id="ch7">
+<h2>7. GAE 广义优势估计</h2>
+<h3>7.1 TD Error</h3>
+<p>\[\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)\]</p>
+<p>如果 \(\delta_t&gt;0\)，说明实际结果比 critic 预期更好；如果 \(\delta_t&lt;0\)，说明结果比预期更差。</p>
+<h3>7.2 多步 Advantage</h3>
+<p>一步：</p>
+<p>\[A_t^{(1)}=\delta_t\]</p>
+<p>两步：</p>
+<p>\[A_t^{(2)}=\delta_t+\gamma\delta_{t+1}\]</p>
+<p>GAE：</p>
+<p>\[A_t^{GAE}=\sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}\]</p>
+<p>\(\lambda=0\) 方差小但偏差大；\(\lambda=1\) 接近 Monte Carlo，偏差小但方差大。常用 \(\lambda=0.95\)。</p>
+<h3>7.3 GAE 伪代码</h3>
+<pre>输入：一条轨迹中的 reward r_t、value V(s_t)、done 标记、折扣因子 γ、GAE 参数 λ
+
+advantage = 0
+for t = T-1 ... 0:   # 从最后一步向前递推
+    if done_t:
+        next_value = 0
+        next_non_terminal = 0
+    else:
+        next_value = V(s_{t+1})
+        next_non_terminal = 1
+
+    δ_t = r_t + γ * next_value * next_non_terminal - V(s_t)
+    advantage = δ_t + γ * λ * next_non_terminal * advantage
+    A_t = advantage
+    R_t = A_t + V(s_t)   # value target
+
+输出：优势 A_t 和价值函数目标 R_t</pre>
+<h3>7.4 机器人例子</h3>
+<pre>t0：接近物体，r0 = 0
+t1：闭合夹爪，r1 = 0
+t2：成功抓起，r2 = 10
+
+GAE 会把 t2 的成功奖励向前传播，
+让模型知道 t0 和 t1 的动作对最终成功有贡献。</pre>
+</section>
+<section id="ch8">
+<h2>8. Online / Offline RL、无模型 RL 与有模型 RL</h2>
+<h3>8.1 Online RL</h3>
+<p>Online RL 的数据来自当前策略与环境交互：</p>
+<p>\[D=\{\tau_i\mid \tau_i\sim\pi_\theta\}\]</p>
+<p>优点是能探索和适应真实环境；缺点是真机成本高、安全风险大。对于机器人，Online RL 通常不建议从零开始，而应从模仿学习策略、规则策略或仿真策略初始化。</p>
+<h3>8.2 Offline RL</h3>
+<p>Offline RL 使用固定数据集：</p>
+<p>\[D=\{(s,a,r,s')\}\]</p>
+<p>数据来自行为策略 \(\beta(a|s)\)，学习目标策略 \(\pi(a|s)\)。核心难点是 out-of-distribution action 和 extrapolation error：模型可能高估数据集中很少出现、甚至没有出现过的动作。</p>
+<h3>8.3 无模型 RL</h3>
+<p>无模型 RL 不显式学习环境动力学，而是直接学习策略或价值函数。DQN、PPO、SAC、DDPG、A3C 都属于这一类。</p>
+<table>
+<tr><th>类型</th><th>代表算法</th><th>核心思想</th><th>VLA 中的典型位置</th></tr>
+<tr><td>Value-based</td><td>DQN</td><td>学习 \(Q(s,a)\)，选择最大 Q 的动作</td><td>高层离散技能选择</td></tr>
+<tr><td>Policy gradient</td><td>PPO / GRPO</td><td>直接优化策略概率</td><td>action token / action chunk 微调</td></tr>
+<tr><td>Actor-Critic</td><td>SAC / DDPG / A3C</td><td>Actor 产生动作，Critic 评价动作</td><td>连续动作控制、residual RL</td></tr>
+</table>
+<h3>8.4 有模型 RL：Model-Based RL</h3>
+<p>有模型 RL 会显式学习或使用环境动力学模型：</p>
+<p>\[\hat{s}_{t+1}=f_\psi(s_t,a_t), \quad \hat{r}_t=r_\eta(s_t,a_t)\]</p>
+<p>然后利用该模型做规划、模拟 rollout 或辅助策略训练。它的关键区别是：无模型 RL 主要学习“怎么做”，有模型 RL 会额外学习“世界如何变化”。</p>
+<table>
+<tr><th>方法</th><th>核心机制</th><th>优点</th><th>风险</th></tr>
+<tr><td>Dyna</td><td>真实交互 + 模型生成虚拟样本</td><td>提高样本效率</td><td>模型误差会误导策略</td></tr>
+<tr><td>MBPO</td><td>短 horizon 模型 rollout + model-free 更新</td><td>比纯 RL 更省样本</td><td>rollout 太长会累积误差</td></tr>
+<tr><td>Dreamer</td><td>在 latent world model 中训练 actor-critic</td><td>适合图像输入</td><td>模型训练复杂</td></tr>
+<tr><td>MPC</td><td>用模型预测多个动作序列并选择最优</td><td>可解释、安全边界清晰</td><td>实时计算压力较大</td></tr>
+</table>
+<h3>8.5 世界模型、MPC 与 VLA 的关系</h3>
+<p>在 VLA / WAM / VAM 语境中，世界模型可以理解为对未来视觉、状态或 latent state 的预测器。它不一定直接输出动作，而是帮助系统评估“如果执行某个动作序列，未来会发生什么”。</p>
+<pre>VLA policy:      图像 + 语言 + 状态 → action chunk
+World Model:     图像/latent + 动作 → 未来图像/latent/状态
+Reward Model:    未来状态 → 成功概率 / 风险 / 轨迹质量
+Planner / MPC:   采样多条动作序列 → 预测未来 → 选择最优动作</pre>
+<p>工程上可以形成三种组合：</p>
+<ol>
+<li><strong>VLA + Model-Free RL：</strong>先用 VLA 产生动作，再用 PPO / GRPO / SAC 优化成功率。</li>
+<li><strong>VLA + World Model：</strong>VLA 提供候选动作，世界模型预测未来，筛选更优动作。</li>
+<li><strong>VLA + MPC：</strong>VLA 给出动作先验，MPC 在安全约束和动力学模型下做短 horizon 修正。</li>
+</ol>
+<div class="note">
+<strong>选型建议：</strong>如果任务是抓取、放置、简单搬运，优先 model-free RL 或模仿学习微调；如果任务依赖长期预测、遮挡恢复、动态物体、复杂接触后果，则需要考虑世界模型或 MPC。
+</div>
+<div class="check"><strong>本章作业：</strong>用一张表比较 model-free RL、model-based RL、world model 和 MPC，并说明它们在 VLA 系统中分别解决什么问题。</div>
+</section>
+<section id="ch9">
+<h2>9. PPO 近端策略优化</h2>
+<h3>9.1 解决的问题</h3>
+<p>普通策略梯度更新过大时容易崩溃。PPO 的核心思想是：允许策略变好，但限制新旧策略差异。</p>
+<h3>9.2 概率比率</h3>
+<p>\[r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}\]</p>
+<h3>9.3 PPO Clip 目标</h3>
+<p>\[L^{CLIP}(\theta)=\mathbb{E}_t\left[\min(r_t(\theta)A_t,\text{clip}(r_t(\theta),1-\epsilon,1+\epsilon)A_t)\right]\]</p>
+<p>如果 \(A_t&gt;0\)，动作好，提升概率，但最多提升到 \(1+\epsilon\)。如果 \(A_t&lt;0\)，动作差，降低概率，但最多降低到 \(1-\epsilon\)。</p>
+<h3>9.4 总损失</h3>
+<p>\[L=-L^{CLIP}+c_1(V_\theta(s_t)-V_{target})^2-c_2H(\pi_\theta)\]</p>
+<h3>9.5 算法流程</h3>
+<pre>1. 用旧策略采样轨迹
+2. 计算 reward
+3. 用 GAE 计算 advantage
+4. 计算概率比率
+5. 用 clipped objective 更新 actor
+6. 用 value loss 更新 critic
+7. 重复</pre>
+<h3>9.6 PPO 伪代码</h3>
+<pre>输入：初始化策略网络 πθ、价值网络 Vφ、环境 Env、clip 系数 ε、折扣因子 γ、GAE 参数 λ
+
+for iteration = 1 ... N:
+    # 1. Rollout 采样
+    用当前策略 πθ_old 在环境中采集 K 条轨迹
+    保存每一步的 (s_t, a_t, r_t, s_{t+1}, done, logp_old_t, V_old_t)
+
+    # 2. 计算回报和优势
+    for 每条轨迹:
+        计算 TD error: δ_t = r_t + γ Vφ(s_{t+1}) - Vφ(s_t)
+        用 GAE 计算 A_t = Σ_l (γλ)^l δ_{t+l}
+        计算 value target: R_t = A_t + V_old_t
+
+    # 3. 多轮 mini-batch 更新
+    for epoch = 1 ... E:
+        for mini_batch in rollout_buffer:
+            重新计算 logp_new_t = log πθ(a_t | s_t)
+            ratio_t = exp(logp_new_t - logp_old_t)
+            policy_loss = -mean(min(ratio_t * A_t, clip(ratio_t, 1-ε, 1+ε) * A_t))
+            value_loss = mean((Vφ(s_t) - R_t)^2)
+            entropy_loss = -mean(H(πθ(.|s_t)))
+            total_loss = policy_loss + c1 * value_loss + c2 * entropy_loss
+            反向传播并更新 θ、φ
+
+    # 4. 更新旧策略
+    θ_old ← θ</pre>
+<h3>9.7 简单例子</h3>
+<pre>旧策略：向右 0.5，向左 0.5
+执行向右后成功，A=+5
+新策略想把向右概率提高到 0.9
+ratio = 0.9/0.5 = 1.8
+若 ε=0.2，PPO 有效提升最多到 1.2，避免更新过猛。</pre>
+<h3>9.8 VLA 中的用法</h3>
+<pre>冻结 VLA backbone
+只训练 action head / adapter / LoRA
+用 PPO 优化 action distribution</pre>
+</section>
+<section id="ch10">
+<h2>10. GRPO 分组相对策略优化</h2>
+<h3>10.1 核心思想</h3>
+<p>对同一个输入 \(x\)，采样 \(G\) 个输出 \(y_1,\dots,y_G\)，得到 rewards \(r_1,\dots,r_G\)。用组内相对分数估计 advantage：</p>
+<p>\[A_i=\frac{r_i-\text{mean}(r)}{\text{std}(r)}\]</p>
+<p>简化形式：\(A_i=r_i-\text{mean}(r)\)。</p>
+<h3>10.2 与 PPO 的关系</h3>
+<p>GRPO 可使用 PPO 风格的 ratio 和 clip：</p>
+<p>\[L_{GRPO}=\mathbb{E}\left[\min(\rho_i A_i,\text{clip}(\rho_i,1-\epsilon,1+\epsilon)A_i)\right]\]</p>
+<p>区别是：PPO 的 advantage 来自 critic / GAE；GRPO 的 advantage 来自组内相对 reward。</p>
+<h3>10.3 GRPO 伪代码</h3>
+<pre>输入：策略模型 πθ、参考模型 πref、环境 Env、group size G、clip 系数 ε、KL 系数 β
+
+for iteration = 1 ... N:
+    从任务集合中采样一批输入 x，例如语言指令 + 初始观测
+
+    for 每个输入 x:
+        # 1. 同一初始条件下采样 G 条候选轨迹
+        for i = 1 ... G:
+            用 πθ 采样动作序列 Y_i = (a_1, ..., a_T)
+            在仿真或真机中执行 Y_i
+            计算轨迹奖励 R_i，例如 success、collision、time、force penalty
+            记录 logπθ_old(Y_i|x) 和 logπref(Y_i|x)
+
+        # 2. 组内相对优势
+        μ = mean(R_1, ..., R_G)
+        σ = std(R_1, ..., R_G)
+        A_i = (R_i - μ) / (σ + 1e-6)
+
+    # 3. 策略更新
+    for mini_batch in collected_groups:
+        重新计算 logπθ(Y_i|x)
+        ratio_i = exp(logπθ(Y_i|x) - logπθ_old(Y_i|x))
+        clipped_ratio_i = clip(ratio_i, 1-ε, 1+ε)
+        policy_loss = -mean(min(ratio_i * A_i, clipped_ratio_i * A_i))
+        kl_loss = mean(logπθ(Y_i|x) - logπref(Y_i|x))
+        total_loss = policy_loss + β * kl_loss
+        反向传播并更新 θ
+
+    定期评估 success rate、collision rate 和 reward 分布</pre>
+<h3>10.4 VLA 例子</h3>
+<table>
+<tr><th>轨迹</th><th>结果</th><th>reward</th></tr>
+<tr><td>1</td><td>成功完成</td><td>10</td></tr>
+<tr><td>2</td><td>接近目标但失败</td><td>3</td></tr>
+<tr><td>3</td><td>碰撞</td><td>-5</td></tr>
+<tr><td>4</td><td>物体掉落</td><td>-8</td></tr>
+</table>
+<p>GRPO 会提高轨迹 1、2 的概率，降低轨迹 3、4 的概率。</p>
+<h3>10.5 难点</h3>
+<ul>
+<li>机器人采样成本高。</li>
+<li>真机试错有风险。</li>
+<li>轨迹 reward 难以分配到每个 action token。</li>
+<li>更适合先在仿真中使用。</li>
+</ul>
+</section>
+<section id="ch11">
+<h2>11. DPO 直接偏好优化</h2>
+<h3>11.1 数据格式</h3>
+<p>DPO 使用偏好对：</p>
+<pre>(x, y_w, y_l)</pre>
+<p>其中 \(y_w\) 是 chosen，\(y_l\) 是 rejected。机器人中可以是成功轨迹与失败轨迹、低力轨迹与高力轨迹、少干预轨迹与多干预轨迹。</p>
+<h3>11.2 DPO 损失</h3>
+<p>\[\Delta_\theta=\log\pi_\theta(y_w|x)-\log\pi_\theta(y_l|x)\]</p>
+<p>\[\Delta_{ref}=\log\pi_{ref}(y_w|x)-\log\pi_{ref}(y_l|x)\]</p>
+<p>\[L_{DPO}=-\log\sigma(\beta(\Delta_\theta-\Delta_{ref}))\]</p>
+<p>含义：提高 chosen 的概率，降低 rejected 的概率，同时不要偏离 reference policy 太远。</p>
+<h3>11.3 DPO 伪代码</h3>
+<pre>输入：偏好数据集 D={(x, y_w, y_l)}、待训练策略 πθ、参考策略 πref、温度系数 β
+
+for epoch = 1 ... E:
+    for mini_batch in D:
+        # 1. 计算 chosen / rejected 在当前策略下的 log probability
+        logp_w = log πθ(y_w | x)
+        logp_l = log πθ(y_l | x)
+        Δθ = logp_w - logp_l
+
+        # 2. 计算参考策略的差值，通常 reference policy 冻结
+        logp_ref_w = log πref(y_w | x)
+        logp_ref_l = log πref(y_l | x)
+        Δref = logp_ref_w - logp_ref_l
+
+        # 3. DPO 损失：鼓励 chosen 相对 rejected 更可能
+        loss = -mean(log sigmoid(β * (Δθ - Δref)))
+
+        # 4. 更新策略
+        反向传播并更新 θ
+
+机器人/VLA 用法：
+    x 可以是视觉观测 + 语言指令
+    y_w 可以是成功轨迹、低力轨迹、少干预轨迹
+    y_l 可以是失败轨迹、碰撞轨迹、高力轨迹、多干预轨迹</pre>
+<h3>11.4 简单例子</h3>
+<pre>任务：把方块放进盒子
+chosen：稳定接近 → 正确抓取 → 放入盒子
+rejected：接近偏差 → 抓取失败 → 方块掉落
+
+DPO 学到：
+提高 chosen 轨迹概率
+降低 rejected 轨迹概率</pre>
+</section>
+<section id="ch12">
+<h2>12. SAC 软演员-评论家算法</h2>
+<h3>12.1 最大熵目标</h3>
+<p>SAC 的目标是最大化 reward，同时最大化策略熵：</p>
+<p>\[J(\pi)=\mathbb{E}\left[\sum_t r(s_t,a_t)+\alpha H(\pi(\cdot|s_t))\right]\]</p>
+<p>因为 \(H(\pi)=-\mathbb{E}[\log\pi(a|s)]\)，所以：</p>
+<p>\[J(\pi)=\mathbb{E}\left[\sum_t r(s_t,a_t)-\alpha\log\pi(a_t|s_t)\right]\]</p>
+<h3>12.2 Soft Value 与 Critic</h3>
+<p>\[V(s)=\mathbb{E}_{a\sim\pi}[Q(s,a)-\alpha\log\pi(a|s)]\]</p>
+<p>使用两个 Q 网络减少过估计：</p>
+<p>\[y=r+\gamma\left[\min(Q'_1(s',a'),Q'_2(s',a'))-\alpha\log\pi(a'|s')\right]\]</p>
+<p>\[L_Q=\mathbb{E}[(Q_i(s,a)-y)^2]\]</p>
+<h3>12.3 Actor Loss</h3>
+<p>\[L_\pi=\mathbb{E}[\alpha\log\pi(a|s)-\min(Q_1(s,a),Q_2(s,a))]\]</p>
+<h3>12.4 SAC 伪代码</h3>
+<pre>输入：策略网络 πθ、双 Q 网络 Qφ1/Qφ2、目标 Q 网络 Qφ1_target/Qφ2_target、温度 α、Replay Buffer B
+
+初始化 θ、φ1、φ2，并复制目标网络参数
+
+for step = 1 ... N:
+    # 1. 与环境交互
+    根据当前状态 s_t，从策略 πθ 采样动作 a_t
+    执行动作，得到 r_t、s_{t+1}、done
+    将 (s_t, a_t, r_t, s_{t+1}, done) 存入 B
+
+    # 2. 从 Replay Buffer 采样
+    for gradient_step = 1 ... G:
+        采样 mini_batch (s, a, r, s', done)
+
+        # 3. 更新 Critic
+        从 πθ(.|s') 采样 a'，并计算 logπθ(a'|s')
+        target = r + γ(1-done) * [min(Q_target1(s',a'), Q_target2(s',a')) - α logπθ(a'|s')]
+        critic_loss = MSE(Qφ1(s,a), target) + MSE(Qφ2(s,a), target)
+        更新 φ1、φ2
+
+        # 4. 更新 Actor
+        从 πθ(.|s) 采样新动作 a_new，并计算 logπθ(a_new|s)
+        actor_loss = mean(α logπθ(a_new|s) - min(Qφ1(s,a_new), Qφ2(s,a_new)))
+        更新 θ
+
+        # 5. 可选：自动调整温度 α
+        alpha_loss = -mean(α * (logπθ(a_new|s) + target_entropy))
+        更新 α
+
+        # 6. 软更新目标网络
+        φ_target ← τ φ + (1-τ) φ_target</pre>
+<h3>12.5 简单例子：连续末端控制</h3>
+<pre>状态：当前末端位置 + 目标位置
+动作：Δx, Δy, Δz
+奖励：r = -distance_to_target
+
+SAC 学会输出连续动作，让末端逐步靠近目标。</pre>
+<h3>12.6 VLA 中的推荐用法</h3>
+<pre>VLA 输出粗动作 a_VLA
+SAC 输出 residual correction a_SAC
+最终动作：a_final = a_VLA + a_SAC</pre>
+<p>该结构适合插孔、插槽、装配、推拉等连续接触微调任务。</p>
+</section>
+<section id="ch13">
+<h2>13. DQN 深度 Q 网络</h2>
+<h3>13.1 Q-learning</h3>
+<p>最优 Q 方程：</p>
+<p>\[Q^*(s,a)=\mathbb{E}[r+\gamma\max_{a'}Q^*(s',a')]\]</p>
+<p>Q-learning 更新：</p>
+<p>\[Q(s,a)\leftarrow Q(s,a)+\alpha[r+\gamma\max_{a'}Q(s',a')-Q(s,a)]\]</p>
+<h3>13.2 DQN Loss</h3>
+<p>\[y=r+\gamma\max_{a'}Q(s',a';\theta^-)\]</p>
+<p>\[L(\theta)=\mathbb{E}[(y-Q(s,a;\theta))^2]\]</p>
+<p>其中 \(\theta^-\) 是 target network。</p>
+<h3>13.3 Replay Buffer 与 Target Network</h3>
+<p>Replay Buffer 打破样本相关性；Target Network 稳定目标值，避免目标随着当前网络剧烈变化。</p>
+<h3>13.4 DQN 伪代码</h3>
+<pre>输入：Q 网络 Qθ、目标 Q 网络 Qθ_target、Replay Buffer B、ε-greedy 探索率 ε
+
+初始化 Qθ，并复制 Qθ_target ← Qθ
+
+for step = 1 ... N:
+    # 1. ε-greedy 选择动作
+    以概率 ε 随机选择动作 a_t
+    否则选择 a_t = argmax_a Qθ(s_t, a)
+
+    # 2. 与环境交互
+    执行动作 a_t，得到 r_t、s_{t+1}、done
+    将 (s_t, a_t, r_t, s_{t+1}, done) 存入 B
+
+    # 3. 采样并更新 Q 网络
+    从 B 中采样 mini_batch
+    y = r + γ(1-done) * max_{a'} Qθ_target(s', a')
+    q_pred = Qθ(s, a)
+    loss = mean((q_pred - y)^2)
+    反向传播并更新 θ
+
+    # 4. 周期性更新目标网络
+    if step % target_update_interval == 0:
+        Qθ_target ← Qθ
+
+    # 5. 逐步降低探索率
+    ε ← max(ε_min, decay * ε)</pre>
+<h3>13.5 机器人应用</h3>
+<p>DQN 不适合直接输出连续机械臂动作，但适合高层离散技能选择：</p>
+<pre>0：继续接近
+1：重新定位
+2：执行抓取
+3：执行放置
+4：请求人工接管</pre>
+</section>
+<section id="ch14">
+<h2>14. DDPG 深度确定性策略梯度</h2>
+<h3>14.1 Actor-Critic</h3>
+<p>Actor 输出确定性动作：</p>
+<p>\[a=\mu(s;\theta^\mu)\]</p>
+<p>Critic 评价动作：</p>
+<p>\[Q(s,a;\theta^Q)\]</p>
+<h3>14.2 Critic 更新</h3>
+<p>\[y=r+\gamma Q'(s',\mu'(s'))\]</p>
+<p>\[L=\mathbb{E}[(Q(s,a)-y)^2]\]</p>
+<h3>14.3 Actor 更新</h3>
+<p>Actor 最大化：</p>
+<p>\[J(\theta^\mu)=\mathbb{E}[Q(s,\mu(s;\theta^\mu))]\]</p>
+<p>梯度：</p>
+<p>\[\nabla_{\theta^\mu}J\approx\mathbb{E}[\nabla_aQ(s,a)|_{a=\mu(s)}\nabla_{\theta^\mu}\mu(s)]\]</p>
+<h3>14.4 DDPG 伪代码</h3>
+<pre>输入：确定性 Actor μθ、Critic Qφ、目标网络 μθ_target/Qφ_target、Replay Buffer B
+
+初始化 θ、φ，并复制目标网络参数
+
+for step = 1 ... N:
+    # 1. 行为策略加入探索噪声
+    a_t = μθ(s_t) + exploration_noise
+
+    # 2. 与环境交互
+    执行动作 a_t，得到 r_t、s_{t+1}、done
+    将 (s_t, a_t, r_t, s_{t+1}, done) 存入 B
+
+    # 3. 更新 Critic
+    从 B 中采样 mini_batch
+    a_next = μθ_target(s')
+    y = r + γ(1-done) * Qφ_target(s', a_next)
+    critic_loss = mean((Qφ(s,a) - y)^2)
+    更新 φ
+
+    # 4. 更新 Actor
+    actor_loss = -mean(Qφ(s, μθ(s)))
+    更新 θ
+
+    # 5. 软更新目标网络
+    θ_target ← τθ + (1-τ)θ_target
+    φ_target ← τφ + (1-τ)φ_target</pre>
+<h3>14.5 简单例子</h3>
+<pre>状态：当前末端位置 + 目标位置
+动作：Δx, Δy, Δz
+Actor 输出连续动作
+Critic 判断动作是否让末端接近目标</pre>
+<p>DDPG 是理解连续控制的重要基础，但实际工程中通常优先 SAC / TD3。</p>
+</section>
+<section id="ch15">
+<h2>15. A3C 异步优势演员-评论家</h2>
+<h3>15.1 基本结构</h3>
+<p>A3C = Asynchronous Advantage Actor-Critic。包含 actor、critic 和多个并行 worker。</p>
+<h3>15.2 n-step return</h3>
+<p>\[R_t=r_t+\gamma r_{t+1}+\cdots+\gamma^nV(s_{t+n})\]</p>
+<p>\[A_t=R_t-V(s_t)\]</p>
+<h3>15.3 损失函数</h3>
+<p>\[L_{actor}=-\log\pi(a_t|s_t)A_t\]</p>
+<p>\[L_{critic}=(R_t-V(s_t))^2\]</p>
+<p>\[L=L_{actor}+cL_{critic}-\beta H(\pi)\]</p>
+<h3>15.4 A3C 伪代码</h3>
+<pre>输入：全局 Actor-Critic 网络 πθ/Vφ，多个并行 worker，每个 worker 有本地网络副本
+
+初始化全局参数 θ、φ
+并行启动 M 个 worker
+
+for each worker asynchronously:
+    while not converged:
+        # 1. 同步全局参数到本地网络
+        θ_local ← θ
+        φ_local ← φ
+
+        # 2. 本地环境采样 n-step trajectory
+        for t = 1 ... n:
+            根据 πθ_local(.|s_t) 采样动作 a_t
+            执行动作，得到 r_t、s_{t+1}、done
+            保存 (s_t, a_t, r_t)
+            if done: break
+
+        # 3. 计算 n-step return 和 advantage
+        R = 0 if done else Vφ_local(s_{t+1})
+        从后往前计算 R_t = r_t + γ R_{t+1}
+        A_t = R_t - Vφ_local(s_t)
+
+        # 4. 计算本地梯度
+        actor_loss = -Σ log πθ_local(a_t|s_t) * A_t
+        critic_loss = Σ (Vφ_local(s_t) - R_t)^2
+        entropy_bonus = Σ H(πθ_local(.|s_t))
+        total_loss = actor_loss + c * critic_loss - β * entropy_bonus
+
+        # 5. 异步把梯度应用到全局网络
+        将本地梯度更新到全局参数 θ、φ</pre>
+<h3>15.5 简单例子</h3>
+<p>创建多个仿真机器人环境，每个 worker 面对不同初始物体位置，并行采样经验，然后更新全局策略。</p>
+</section>
+<section id="ch16">
+<h2>16. 强化学习算法选型、超参数与训练诊断</h2>
+<h3>16.1 算法对比表</h3>
+<table>
+<tr><th>算法</th><th>数学核心</th><th>动作空间</th><th>适合场景</th><th>不适合场景</th></tr>
+<tr><td>DQN</td><td>Bellman 最优 Q</td><td>离散</td><td>高层技能选择、状态机分支选择</td><td>连续底层控制</td></tr>
+<tr><td>PPO</td><td>clipped policy gradient</td><td>离散/连续</td><td>仿真策略优化、VLA action head 微调</td><td>样本极少真机、reward 极稀疏场景</td></tr>
+<tr><td>GRPO</td><td>组内相对 reward</td><td>序列/token/chunk</td><td>VLA 多轨迹优化、无需 critic 的相对偏好优化</td><td>无法并行采样、reward 噪声极大的真机场景</td></tr>
+<tr><td>DPO</td><td>偏好对优化</td><td>序列/轨迹</td><td>成功/失败轨迹、人工偏好轨迹学习</td><td>需要主动探索新动作的任务</td></tr>
+<tr><td>DDPG</td><td>deterministic policy gradient</td><td>连续</td><td>连续控制入门、理解 actor-critic</td><td>高噪声接触任务、复杂高维视觉输入</td></tr>
+<tr><td>SAC</td><td>最大熵 actor-critic</td><td>连续</td><td>接触微调、residual RL、低维状态控制</td><td>超大 VLA 全参训练</td></tr>
+<tr><td>A3C</td><td>异步 actor-critic</td><td>离散/连续</td><td>理解并行采样与 actor-critic</td><td>现代机器人 RL 的首选性不高</td></tr>
+</table>
+<h3>16.2 工程选型决策树</h3>
+<pre>第一步：判断动作空间
+├─ 离散技能选择 / 行为树节点选择
+│  ├─ 状态低维：DQN / PPO
+│  └─ 需要稳定在线更新：PPO
+├─ 连续末端动作 / 关节动作
+│  ├─ 低维状态 + 接触微调：SAC
+│  ├─ 需要 residual correction：VLA + SAC residual
+│  └─ 只做入门验证：DDPG / TD3
+└─ action token / action chunk / 轨迹序列
+   ├─ 有成功/失败偏好对：DPO
+   ├─ 同一初始状态可采样多条轨迹：GRPO
+   ├─ 需要 critic 和 GAE：PPO
+   └─ reward 极稀疏：先做 imitation learning + reward shaping，再考虑 RL
+
+第二步：判断训练环境
+├─ 仿真可并行：PPO / GRPO / SAC 都可尝试
+├─ 真机单台设备：优先 HIL-SERL / residual SAC / 小步 PPO
+└─ 数据固定不可交互：DPO / Offline RL / 行为克隆增强
+
+第三步：判断模型规模
+├─ 小模型：可训练 actor + critic
+├─ 大 VLA：冻结 backbone，只训练 LoRA / adapter / action head
+└─ Flow / Diffusion action head：必须先确认 log probability 或 score 估计方式</pre>
+<h3>16.3 常用超参数参考值</h3>
+<table>
+<tr><th>算法</th><th>超参数</th><th>建议起点</th><th>异常时调整</th></tr>
+<tr><td>PPO</td><td>learning rate</td><td>1e-5～3e-4；大 VLA LoRA 建议 1e-5～5e-5</td><td>reward 剧烈震荡则降低；收敛太慢则小幅升高</td></tr>
+<tr><td>PPO</td><td>clip range \(\epsilon\)</td><td>0.1～0.2</td><td>KL 爆炸降到 0.05～0.1；学习太慢升到 0.2</td></tr>
+<tr><td>PPO</td><td>GAE \(\lambda\)</td><td>0.9～0.97，常用 0.95</td><td>优势估计噪声大则降低；长程信用分配差则升高</td></tr>
+<tr><td>PPO / GRPO</td><td>KL coefficient</td><td>0.01～0.2</td><td>策略偏离 reference 太快则升高；完全学不动则降低</td></tr>
+<tr><td>GRPO</td><td>group size G</td><td>4～16</td><td>reward 方差太大则增大 G；显存不够则减小 G</td></tr>
+<tr><td>SAC</td><td>actor / critic lr</td><td>3e-4；接触任务可从 1e-4 开始</td><td>Q 值发散则降低 critic lr</td></tr>
+<tr><td>SAC</td><td>entropy temperature \(\alpha\)</td><td>自动调节优先；固定值可从 0.05～0.2 尝试</td><td>探索不足升高；动作抖动明显降低</td></tr>
+<tr><td>DQN</td><td>replay buffer</td><td>1e5～1e6 transitions</td><td>过拟合近期数据则增大 buffer</td></tr>
+<tr><td>DPO</td><td>\(\beta\)</td><td>0.05～0.5</td><td>偏离 reference 太快则降低；偏好学习弱则升高</td></tr>
+</table>
+<h3>16.4 训练监控指标与异常诊断</h3>
+<table>
+<tr><th>监控指标</th><th>正常现象</th><th>异常现象</th><th>可能原因</th><th>处理方式</th></tr>
+<tr><td>episode reward</td><td>整体上升，允许短期波动</td><td>剧烈震荡或突然坍塌</td><td>学习率过高、reward scale 过大、策略更新过猛</td><td>降低 lr、缩小 clip、增大 KL penalty</td></tr>
+<tr><td>success rate</td><td>阶梯式上升</td><td>reward 上升但成功率不升</td><td>reward hacking、shaping 权重错误</td><td>提高 success reward 权重，检查 reward 与真实任务是否一致</td></tr>
+<tr><td>policy entropy</td><td>逐渐下降</td><td>很快接近 0</td><td>策略过早确定，探索不足</td><td>增大 entropy bonus / SAC α，降低学习率</td></tr>
+<tr><td>KL divergence</td><td>小幅波动</td><td>持续升高或爆炸</td><td>新策略偏离旧策略/参考策略过快</td><td>增大 KL penalty，降低 lr，减少 update epoch</td></tr>
+<tr><td>value loss</td><td>下降后稳定</td><td>长期不下降</td><td>critic 容量不足、reward 噪声大、bootstrap 错误</td><td>调 reward scale，增大 critic，检查 done / timeout 处理</td></tr>
+<tr><td>Q value</td><td>与回报量级一致</td><td>持续变大到不合理范围</td><td>过估计、target 更新不稳定</td><td>使用 double Q，降低 critic lr，检查 target smoothing</td></tr>
+<tr><td>action norm</td><td>稳定在安全范围</td><td>动作突然变大或抖动</td><td>策略不稳定、动作归一化错误</td><td>动作限幅、平滑滤波、检查 action scale</td></tr>
+<tr><td>intervention count</td><td>随训练减少</td><td>不降反升</td><td>策略探索破坏已有能力</td><td>增加 imitation loss / intervention loss，降低 RL 更新强度</td></tr>
+</table>
+<h3>16.5 VLA + RL 调参顺序</h3>
+<ol>
+<li>先固定 backbone，只训练 action head / LoRA，避免全参 RL。</li>
+<li>先验证 reward 是否能区分成功、接近成功、失败、碰撞四类轨迹。</li>
+<li>先用小 batch 跑通 100～500 个 episode，看指标是否有方向性。</li>
+<li>再调学习率、clip、KL、reward scale，不要同时改太多参数。</li>
+<li>最后再扩大并行环境数、模型规模和任务复杂度。</li>
+</ol>
+<div class="check"><strong>本章作业：</strong>任选一个机器人任务，按“动作空间—训练环境—模型规模—reward 形式”四个维度写出算法选型理由，并给出 PPO 或 SAC 的初始超参数表。</div>
+</section>
+<section id="ch17">
+<h2>17. 简单验证实验</h2>
+<h3>17.1 实验路线</h3>
+<table>
+<tr><th>实验</th><th>环境</th><th>算法</th><th>理解重点</th></tr>
+<tr><td>1</td><td>CartPole</td><td>DQN</td><td>Q 值、Bellman target、replay buffer</td></tr>
+<tr><td>2</td><td>CartPole / Pendulum</td><td>PPO</td><td>advantage、ratio、clip、actor-critic</td></tr>
+<tr><td>3</td><td>Pendulum / MuJoCo Reach</td><td>SAC</td><td>最大熵、双 Q、连续动作</td></tr>
+<tr><td>4</td><td>轨迹偏好数据</td><td>DPO</td><td>chosen/rejected、偏好优化</td></tr>
+<tr><td>5</td><td>仿真多轨迹</td><td>GRPO</td><td>组内相对 reward、多轨迹优化</td></tr>
+</table>
+<h3>17.2 每个实验报告模板</h3>
+<pre>实验名称：
+环境：
+算法：
+状态空间：
+动作空间：
+reward：
+训练参数：
+训练曲线：
+成功率：
+失败案例：
+结论：
+下一步改进：</pre>
+<h3>17.3 环境搭建快速开始</h3>
+<p>以下命令用于普通 RL 入门实验。VLA 大模型训练通常需要单独配置 CUDA、PyTorch、Transformers、LeRobot、仿真器和机器人驱动。</p>
+<pre># 1. 创建 Python 环境
+conda create -n rl-vla-basic python=3.10 -y
+conda activate rl-vla-basic
+
+# 2. 安装基础 RL 工具
+pip install gymnasium[classic-control] stable-baselines3 torch torchvision numpy matplotlib
+
+# 3. 如果需要 MuJoCo 任务
+pip install gymnasium[mujoco] mujoco
+
+# 4. 最小 PPO 验证
+python - &lt;&lt;'PY'
+import gymnasium as gym
+from stable_baselines3 import PPO
+
+env = gym.make("CartPole-v1")
+model = PPO("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=10000)
+print("PPO quickstart finished")
+PY</pre>
+<h3>17.4 实验验收标准</h3>
+<table>
+<tr><th>阶段</th><th>验收目标</th><th>不通过时检查</th></tr>
+<tr><td>安装</td><td>环境可 reset / step</td><td>Python 版本、依赖冲突、MuJoCo license/驱动</td></tr>
+<tr><td>随机策略</td><td>能采样 observation/action/reward</td><td>动作空间范围、done 逻辑</td></tr>
+<tr><td>基础训练</td><td>reward 有上升趋势</td><td>学习率、reward 定义、环境是否可解</td></tr>
+<tr><td>评估</td><td>固定 seed 下能复现实验结果</td><td>随机种子、模型保存、eval 环境是否一致</td></tr>
+</table>
+<div class="check"><strong>本章作业：</strong>跑通 CartPole PPO 和 Pendulum SAC，分别记录 reward 曲线、最终成功指标、失败现象和一个可复现实验命令。</div>
+</section>
+<section id="ch18">
+<h2>18. VLA + RL 研究趋势</h2>
+<h3>18.1 为什么 VLA + RL 重要</h3>
+<p>VLA 主要依赖模仿学习获得初始能力，但在真实机器人中会受到分布偏移、错误累积、失败恢复弱、接触控制不足等问题限制。RL 可以直接优化任务成功率、纠偏能力和恢复能力。</p>
+<h3>18.2 LLM-RL 与 VLA-RL 的共性和差异</h3>
+<table>
+<tr><th>维度</th><th>LLM-RL</th><th>VLA-RL</th></tr>
+<tr><td>输出</td><td>文本 token</td><td>动作 / action token / action chunk</td></tr>
+<tr><td>环境</td><td>数字环境</td><td>物理世界</td></tr>
+<tr><td>错误代价</td><td>答错</td><td>撞机、损坏、危险</td></tr>
+<tr><td>采样成本</td><td>低</td><td>高</td></tr>
+<tr><td>reward</td><td>规则、人类偏好</td><td>成功、碰撞、力、轨迹</td></tr>
+<tr><td>安全要求</td><td>中</td><td>极高</td></tr>
+</table>
+<h3>18.3 DeepSeek R1 中 GRPO 的价值及对 VLA 的启示</h3>
+<p>DeepSeek R1 将 GRPO（Group Relative Policy Optimization）引入大语言模型推理优化，证明了无需 Critic 网络的组内相对奖励机制可以有效提升模型推理质量，并显著降低显存开销。这一成果对 VLA + RL 领域有直接的方法论迁移价值。</p>
+<table>
+<tr><th>维度</th><th>DeepSeek R1 中的应用</th><th>VLA 中的对应迁移</th></tr>
+<tr><td>输出单元</td><td>推理链 token 序列</td><td>动作 token 序列 / action chunk</td></tr>
+<tr><td>Reward 来源</td><td>答案正确性 + 格式规则</td><td>任务成功率 + 轨迹质量</td></tr>
+<tr><td>Critic 依赖</td><td>无 Critic，组内基线</td><td>可去掉 Value Head，降低显存</td></tr>
+<tr><td>训练稳定性</td><td>高（相对奖励归一化）</td><td>中（机器人 reward 噪声更高）</td></tr>
+<tr><td>核心优势</td><td>免去 reward model 训练</td><td>适合多轨迹并行仿真场景</td></tr>
+</table>
+<div class="note">
+<strong>核心公式回顾：</strong>GRPO 在同一初始状态采样 G 条轨迹，用组内均值和方差归一化奖励作为 advantage：
+\[A_i = \frac{r_i - \text{mean}(r_1,\ldots,r_G)}{\text{std}(r_1,\ldots,r_G)}\]
+VLA 中的 action chunk 整体视为一条轨迹，其 reward 为任务完成奖励的总和。
+</div>
+<p><strong>对 VLA 落地的三点启示：</strong></p>
+<ol>
+<li>GRPO 适合并行仿真环境（Isaac Sim / MuJoCo），可同时 rollout G 条轨迹。</li>
+<li>Reward 需要足够密集或阶段性，否则组内奖励方差极大，训练发散。</li>
+<li>VLA backbone 应保持冻结，仅更新 action head 或 LoRA，避免 forgetting。</li>
+</ol>
+<h3>18.4 核心难点</h3>
+<ul>
+<li>Reward 设计困难：物理接触任务的 reward 难以自动计算，需要传感器或视觉检测辅助。</li>
+<li>Credit assignment 困难：action chunk 整体执行后才有 reward，中间步的贡献难以分解。</li>
+<li>真机采样昂贵：一条轨迹需要几秒到几十秒，并行能力受限于物理设备数量。</li>
+<li>仿真到真机存在 gap：接触动力学、摩擦、视觉噪声在仿真中难以精确建模。</li>
+<li>大模型 RL 训练成本高且不稳定：对学习率、KL 系数、clip 范围极为敏感。</li>
+</ul>
+</section>
+<section id="ch19">
+<h2>19. VLA + RL 行业工作分析</h2>
+<h3>19.1 分析一个项目的 10 个问题</h3>
+<ol>
+<li>它解决什么机器人任务？</li>
+<li>它使用什么 VLA backbone？</li>
+<li>动作表示是什么？</li>
+<li>用什么 RL 算法？</li>
+<li>reward 怎么定义？</li>
+<li>数据从哪里来？</li>
+<li>是否有仿真评测？</li>
+<li>是否有真机验证？</li>
+<li>是否和 baseline 对比？</li>
+<li>是否给出失败案例？</li>
+</ol>
+<h3>19.2 判断 demo 是否可信</h3>
+<p>可信 demo 通常有：多次重复测试、失败案例、不同初始位置、完整过程、量化指标、baseline、安全机制说明。不可信 demo 常见表现是：只展示一次成功、剪辑频繁、不展示失败、不展示训练细节。</p>
+<h3>19.3 项目分析模板</h3>
+<pre>项目名称：
+是否有仿真：
+是否有真机：
+评估指标：
+baseline：
+失败案例：
+是否可信：
+是否值得复现：</pre>
+<h3>19.4 主流 VLA + RL 系统架构对比：VLA-RL / SimpleVLA-RL / pi0.6</h3>
+<p>以下三个系统代表了当前业界 VLA + RL 的三种典型技术路线，理解它们的架构差异是进行技术选型和项目分析的基础。</p>
+<table>
+<tr><th>维度</th><th>VLA-RL（通用范式）</th><th>SimpleVLA-RL</th><th>pi0.6（π0.6）</th></tr>
+<tr><td>VLA backbone</td><td>任意（OpenVLA、Octo 等）</td><td>轻量 VLA（去掉多余模块）</td><td>π0 系列（PhysicalIntelligence）</td></tr>
+<tr><td>动作表示</td><td>action token / action chunk</td><td>action token 序列</td><td>Flow Matching action chunk</td></tr>
+<tr><td>RL 算法</td><td>PPO / GRPO / SAC</td><td>GRPO（无 Critic）</td><td>PPO（带 Value Head）</td></tr>
+<tr><td>Critic 设计</td><td>独立 Value Head</td><td>无（组内基线代替）</td><td>共享 backbone 接 Value Head</td></tr>
+<tr><td>动作头</td><td>MLP / Diffusion / FM</td><td>MLP token head</td><td>Diffusion / Flow Matching head</td></tr>
+<tr><td>训练方式</td><td>冻结 backbone，训练 action head</td><td>全量 or LoRA</td><td>冻结视觉，训练 action head + value</td></tr>
+<tr><td>核心优势</td><td>通用性强，适合研究</td><td>简单、易复现、显存低</td><td>真机表现强，FM head 动作质量高</td></tr>
+<tr><td>主要难点</td><td>reward 设计、sim2real</td><td>reward 稀疏时训练发散</td><td>FM head 接 PPO 的 log-prob 计算复杂</td></tr>
+<tr><td>推荐场景</td><td>研究型项目、多算法对比</td><td>快速验证、入门学习</td><td>生产级真机部署</td></tr>
+</table>
+<h3>19.5 实验结果解析框架</h3>
+<p>阅读 VLA + RL 论文时，用以下框架系统化解读实验结果：</p>
+<ol>
+<li><strong>基准对比：</strong>与纯模仿学习 baseline 相比，RL 提升了多少 success rate？在哪些任务上提升显著？</li>
+<li><strong>泛化能力：</strong>训练任务 vs 未见任务的 success rate 差异，反映 RL 是否导致过拟合。</li>
+<li><strong>消融实验：</strong>去掉 reward 的某个分量、去掉 LoRA、改变组数 G，每项对结果的影响。</li>
+<li><strong>真机 vs 仿真差距：</strong>仿真 success rate 和真机 success rate 之间的 gap，以及作者如何处理。</li>
+<li><strong>训练效率：</strong>达到相同 success rate 所需的采样步数 / episode 数 / GPU 小时。</li>
+<li><strong>失败分析：</strong>失败案例的分类（抓取失败、放置偏移、碰撞、超时），以及每类占比。</li>
+</ol>
+</section>
+<section id="ch19b">
+<h2>19.6 行业资源与学习路径汇总</h2>
+<p>本节整理 VLA + RL 领域的核心学习资源，按学习阶段分类，帮助系统建立知识体系。</p>
+<h3>基础理论资源</h3>
+<table>
+<tr><th>资源</th><th>类型</th><th>核心内容</th><th>推荐阶段</th></tr>
+<tr><td>Sutton &amp; Barto《强化学习》</td><td>书籍</td><td>MDP、动态规划、TD、Q-learning、策略梯度</td><td>第1-3周</td></tr>
+<tr><td>Spinning Up in Deep RL（OpenAI）</td><td>在线教程</td><td>PPO、SAC、DDPG 的代码级讲解</td><td>第2-4周</td></tr>
+<tr><td>CS285（UC Berkeley）</td><td>课程视频</td><td>模型驱动RL、离线RL、多任务RL</td><td>第3-5周</td></tr>
+<tr><td>Hugging Face Deep RL Course</td><td>交互课程</td><td>DQN、PPO 实践，有 Jupyter 环境</td><td>第2-3周</td></tr>
+</table>
+<h3>VLA 核心论文</h3>
+<table>
+<tr><th>论文</th><th>核心贡献</th><th>重点阅读章节</th></tr>
+<tr><td>OpenVLA（Kim et al., 2024）</td><td>开源 VLA baseline，7B 参数，action token 输出</td><td>架构、动作表示、fine-tuning 方法</td></tr>
+<tr><td>π0（Black et al., 2024）</td><td>Flow Matching action head，多机器人支持</td><td>action head 设计、训练策略</td></tr>
+<tr><td>GR00T N1（NVIDIA，2025）</td><td>通用人形机器人 VLA，Diffusion Transformer head</td><td>架构演进、RL 接口</td></tr>
+<tr><td>RoboVLMs（综述）</td><td>VLA 发展综述，涵盖主流方法对比</td><td>全文，重点看 Table 1 对比</td></tr>
+</table>
+<h3>VLA + RL 前沿论文</h3>
+<table>
+<tr><th>论文</th><th>核心贡献</th></tr>
+<tr><td>RLIF（Ma et al., 2023）</td><td>模仿学习初始化 + RL fine-tuning，确立基础范式</td></tr>
+<tr><td>HIL-SERL（Luo et al., 2024）</td><td>人在环 RL，真机实时干预数据利用</td></tr>
+<tr><td>SimpleVLA-RL（arXiv:2509.09674）</td><td>极简 GRPO 接入 VLA，无 Critic，易复现</td></tr>
+<tr><td>RLiNF（NVIDIA，2024）</td><td>大规模仿真 RL，多并行环境，Reward 自动计算</td></tr>
+<tr><td>RL for Flow Matching（arXiv:2507.15073）</td><td>FM 动作头接 RL 的 log-prob 近似方法</td></tr>
+</table>
+<h3>工程工具与框架</h3>
+<table>
+<tr><th>工具</th><th>用途</th><th>推荐理由</th></tr>
+<tr><td>LeRobot（Hugging Face）</td><td>真机数据采集、模仿学习、策略部署</td><td>SO-101 官方支持，API 简洁</td></tr>
+<tr><td>Isaac Sim / Isaac Lab（NVIDIA）</td><td>GPU 加速仿真，并行 RL 训练</td><td>物理精度高，适合接触任务</td></tr>
+<tr><td>MuJoCo（DeepMind）</td><td>标准连续控制仿真</td><td>轻量，Meta-World、ManiSkill 均基于此</td></tr>
+<tr><td>Stable-Baselines3</td><td>PPO、SAC、DDPG 标准实现</td><td>代码质量高，适合算法对比实验</td></tr>
+<tr><td>TRL（Hugging Face）</td><td>GRPO、DPO 训练框架</td><td>与 VLA fine-tuning 生态兼容</td></tr>
+<tr><td>LIBERO</td><td>VLA 仿真 benchmark</td><td>语言条件任务，官方提供 VLA 接口</td></tr>
+<tr><td>RoboTwin</td><td>双臂操作仿真 benchmark</td><td>复杂操作任务，适合 RL 评测</td></tr>
+</table>
+<h3>推荐学习路径（按方向）</h3>
+<div class="note">
+<strong>路径 A：算法研究方向</strong><br/>
+数学基础（MDP → 策略梯度 → GAE）→ 算法复现（PPO → SAC → GRPO）→ VLA 论文精读（OpenVLA → π0 → GR00T）→ 仿真实验（LIBERO → RoboTwin）→ 算法改进创新
+</div>
+<div class="note">
+<strong>路径 B：工程落地方向</strong><br/>
+LeRobot 使用（真机采集 → 策略训练 → 部署）→ 仿真环境搭建（Isaac Lab）→ HIL-SERL 实操 → π 系列模型 fine-tuning → 真机 RL 验证
+</div>
+<div class="note">
+<strong>路径 C：求职准备方向</strong><br/>
+VLA 范式理解 → 3 种 RL 算法（PPO + SAC + GRPO）掌握 → 1 个仿真实验（LIBERO PPO）→ 1 个真机实验（SO-101 + HIL-SERL）→ 项目复盘与简历撰写
+</div>
+</section>
+<section id="ch20">
+<h2>20. 仿真空间中的 VLA 强化学习：Reward、Sim2Real 与验证闭环</h2>
+<h3>20.1 为什么先做仿真</h3>
+<p>真机 RL 存在设备损坏、采样慢、调参困难、安全风险高等问题。仿真可以快速 reset、并行采样、自动计算 reward、生成失败数据、做 ablation。</p>
+<h3>20.2 基本闭环</h3>
+<pre>选择任务
+→ 构建仿真环境
+→ 定义 observation
+→ 定义 action
+→ 加载 VLA policy
+→ rollout 采样
+→ 计算 reward
+→ RL 更新
+→ 评估 success rate
+→ 分析失败案例
+→ 做 sim2real 验证</pre>
+<h3>20.3 Observation 设计</h3>
+<ul>
+<li>RGB 图像、多视角图像、深度图或点云。</li>
+<li>语言指令，例如“pick up the cup and put it in the drawer”。</li>
+<li>关节角、夹爪状态、末端位姿、底盘状态。</li>
+<li>历史动作、任务阶段、上一帧预测动作。</li>
+<li>接触任务中可加入力觉、触觉、接触状态。</li>
+</ul>
+<h3>20.4 Reward 设计总公式</h3>
+<p>典型 reward 可以写成：</p>
+<p>\[r_t=w_s r_{success}+w_d r_{distance}+w_g r_{grasp}+w_a r_{alignment}+w_m r_{smooth}-w_c r_{collision}-w_i r_{intervention}\]</p>
+<p>其中 \(r_{success}\) 是任务完成奖励，\(r_{distance}\) 是距离 shaping，\(r_{alignment}\) 是姿态或孔位对齐奖励，\(r_{smooth}\) 是动作平滑奖励，惩罚项用于约束碰撞、掉落、过大力和人工干预。</p>
+<h3>20.5 稀疏 Reward 与密集 Reward</h3>
+<table>
+<tr><th>类型</th><th>定义</th><th>优点</th><th>缺点</th><th>适用场景</th></tr>
+<tr><td>稀疏 reward</td><td>成功 +1，失败 0 或 -1</td><td>目标干净，不易误导</td><td>探索困难，样本效率低</td><td>已有强初始策略、仿真可大规模并行</td></tr>
+<tr><td>密集 reward</td><td>距离、姿态、抓取、对齐、平滑等阶段奖励</td><td>学习速度快，便于调试</td><td>容易 reward hacking</td><td>初始策略弱、任务长、需要阶段引导</td></tr>
+<tr><td>混合 reward</td><td>终局成功奖励 + 阶段 shaping</td><td>工程最常用</td><td>需要调权重</td><td>VLA + RL 大多数操作任务</td></tr>
+</table>
+<h3>20.6 分阶段 Reward Shaping 模板</h3>
+<pre>阶段 1：接近目标
+r_distance = - ||p_ee - p_obj||
+
+阶段 2：抓取
+r_grasp = 1{gripper_closed and object_lifted}
+r_slip_penalty = -1{object_slipped}
+
+阶段 3：移动到目标区域
+r_transport = - ||p_obj - p_target||
+r_height = 1{object_height &gt; threshold}
+
+阶段 4：对齐 / 插入 / 放置
+r_align = - (position_error + λ * rotation_error)
+r_contact = - max(0, force_norm - force_threshold)
+
+阶段 5：成功
+r_success = 10 * 1{task_success}</pre>
+<p>注意：阶段 reward 只能辅助学习，最终指标仍必须以 success rate、collision rate、intervention count 和真机复现率为准。</p>
+<h3>20.7 自动计算 Reward 的工程方法</h3>
+<table>
+<tr><th>Reward 来源</th><th>实现方法</th><th>适合任务</th><th>注意事项</th></tr>
+<tr><td>仿真状态</td><td>直接读取 object pose、contact、joint state</td><td>LIBERO、RoboTwin、Isaac Lab</td><td>真机不可直接获得，需做观测替代</td></tr>
+<tr><td>视觉检测器</td><td>检测目标框、关键点、6D pose、孔位</td><td>抓取、放置、插孔</td><td>检测器误差会污染 reward</td></tr>
+<tr><td>力觉 / 触觉</td><td>接触力阈值、滑移检测、接触面积</td><td>插入、装配、擦拭、拧紧</td><td>需要滤波与异常阈值</td></tr>
+<tr><td>人工干预</td><td>intervention flag、接管次数、接管时长</td><td>HIL-SERL</td><td>人类策略不一致会带来噪声</td></tr>
+<tr><td>任务判定器</td><td>VLM / 规则 / 分类器判断是否完成</td><td>开放式任务</td><td>必须离线抽检误判率</td></tr>
+</table>
+<h3>20.8 Reward Hacking 与防护</h3>
+<table>
+<tr><th>现象</th><th>原因</th><th>防护方式</th></tr>
+<tr><td>机器人靠近目标但不抓取</td><td>距离 reward 过大，成功 reward 太小</td><td>提高终局成功奖励，阶段 reward 设置上限</td></tr>
+<tr><td>抓起后乱动仍获得高分</td><td>只奖励 object height</td><td>增加目标区域、稳定保持、碰撞惩罚</td></tr>
+<tr><td>通过碰撞把物体推到目标</td><td>没有碰撞或力惩罚</td><td>加入 contact force、collision count、动作平滑项</td></tr>
+<tr><td>动作抖动刷平滑或接触奖励</td><td>奖励定义可被重复触发</td><td>对阶段奖励做一次性触发或时间折扣</td></tr>
+<tr><td>仿真成功但真机失败</td><td>reward 依赖仿真内部 privileged state</td><td>增加基于视觉/传感器的真机可观测 reward</td></tr>
+</table>
+<h3>20.9 Sim2Real 独立流程</h3>
+<p>Sim2Real 的目标不是让仿真与真机完全一致，而是让策略在真实扰动下仍然稳定。核心方法是 domain randomization、观测噪声注入、动力学随机化和逐级真机验证。</p>
+<table>
+<tr><th>随机化对象</th><th>配置示例</th><th>目的</th></tr>
+<tr><td>视觉纹理</td><td>桌面材质、物体颜色、背景纹理随机</td><td>降低对固定外观的过拟合</td></tr>
+<tr><td>光照</td><td>亮度、阴影、方向光、曝光随机</td><td>提高不同工位光照鲁棒性</td></tr>
+<tr><td>相机</td><td>外参扰动 1～5 cm / 1～5°，内参和噪声扰动</td><td>抵抗标定误差和安装偏差</td></tr>
+<tr><td>物理参数</td><td>质量、摩擦、阻尼、弹性随机</td><td>抵抗动力学建模误差</td></tr>
+<tr><td>控制延迟</td><td>加入 1～3 帧延迟、动作丢包、执行噪声</td><td>贴近真机控制链路</td></tr>
+<tr><td>初始状态</td><td>目标位置、姿态、障碍物、夹爪初始开度随机</td><td>提升泛化和恢复能力</td></tr>
+</table>
+<h3>20.10 Sim2Real 验证阶梯</h3>
+<pre>Level 0：仿真固定初始条件成功率 ≥ 90%
+Level 1：仿真随机初始条件成功率 ≥ 80%
+Level 2：仿真加入视觉/动力学随机化后成功率 ≥ 70%
+Level 3：真机空跑，不接触物体，轨迹安全
+Level 4：真机低速执行，人工随时接管
+Level 5：真机完整任务，统计 20～50 次 success rate
+Level 6：不同光照、不同物体位置、不同批次物体复测</pre>
+<h3>20.11 仿真到真机失败诊断表</h3>
+<table>
+<tr><th>失败现象</th><th>优先检查</th><th>改进方向</th></tr>
+<tr><td>仿真成功，真机抓偏</td><td>相机外参、目标检测、末端坐标系</td><td>重标定，加入视觉闭环，增大相机随机化</td></tr>
+<tr><td>真机动作抖动</td><td>动作频率、控制延迟、action scale</td><td>动作平滑、低通滤波、降低速度</td></tr>
+<tr><td>接触阶段卡住</td><td>摩擦、力阈值、插入姿态</td><td>加入 force residual policy，随机化摩擦</td></tr>
+<tr><td>一换光照就失败</td><td>视觉 encoder 过拟合</td><td>光照随机化、图像增强、增加多光照数据</td></tr>
+<tr><td>真机越训越差</td><td>在线数据污染、reward 错误、探索过强</td><td>回滚 checkpoint，增加安全约束和干预数据权重</td></tr>
+</table>
+<div class="check"><strong>本章作业：</strong>为一个 pick-and-place 或插孔任务写出 reward 函数、每个权重的初始值、reward hacking 风险，以及从仿真到真机的 6 级验证计划。</div>
+</section>
+<section id="ch21">
+<h2>21. 评测基准：LIBERO / RoboTwin 等</h2>
+<table>
+<tr><th>Benchmark</th><th>语言条件</th><th>适合 VLA</th><th>适合 RL</th><th>推荐用途</th></tr>
+<tr><td>LIBERO</td><td>是</td><td>高</td><td>中</td><td>VLA 基准</td></tr>
+<tr><td>RoboTwin</td><td>是</td><td>高</td><td>高</td><td>复杂操作、双臂任务</td></tr>
+<tr><td>RLBench</td><td>是</td><td>高</td><td>高</td><td>多任务机械臂</td></tr>
+<tr><td>Meta-World</td><td>弱</td><td>低</td><td>高</td><td>RL 入门</td></tr>
+<tr><td>ManiSkill</td><td>部分</td><td>中</td><td>高</td><td>操作 RL</td></tr>
+<tr><td>Robomimic</td><td>弱</td><td>中</td><td>低</td><td>模仿学习</td></tr>
+</table>
+<h3>LIBERO 最小任务</h3>
+<pre>安装环境 → 跑通已有任务 → 查看 observation/action
+→ 加载 imitation policy → 评估 success rate → 保存失败视频</pre>
+<h3>RoboTwin 最小任务</h3>
+<pre>跑通一个双臂任务 → 查看 action space → 修改初始位置
+→ 记录轨迹 → 接入 policy → 输出成功率</pre>
+</section>
+<section id="ch22">
+<h2>22. RLiNF 项目解析方法</h2>
+<h3>22.1 代码阅读顺序</h3>
+<pre>README → 安装说明 → 训练脚本 → 配置文件
+→ 环境封装 → policy 模型 → rollout worker
+→ reward manager → trainer → eval → checkpoint</pre>
+<h3>22.2 必须回答的问题</h3>
+<ul>
+<li>policy 从哪里加载？</li>
+<li>observation 如何组织？</li>
+<li>action 如何输出？</li>
+<li>reward 如何计算？</li>
+<li>rollout 数据如何保存？</li>
+<li>算法在哪里更新参数？</li>
+<li>backbone 是否冻结？</li>
+<li>eval 指标是什么？</li>
+</ul>
+</section>
+<section id="ch23">
+<h2>23. Lingbot-VLA + RL 学习方法</h2>
+<h3>23.1 架构分析框架</h3>
+<pre>图像输入 → 视觉编码器
+语言输入 → 语言模型
+机器人状态 → 状态编码器
+多模态融合 → 动作头 → 动作序列</pre>
+<h3>23.2 Lingbot-VLA + GRPO 流程</h3>
+<pre>选择任务
+→ 准备初始 VLA policy
+→ 在 RoboTwin 中设置初始状态
+→ 对同一状态采样 G 条轨迹
+→ 执行轨迹
+→ 计算 reward
+→ 组内归一化
+→ 计算 GRPO loss
+→ 更新 action head / LoRA
+→ 评估 success rate</pre>
+<h3>23.3 核心难点</h3>
+<p>如果 VLA 输出 action token 序列，轨迹 reward 是整体结果，则需要解决：整条轨迹失败时，哪些 token 应该被惩罚？这就是 credit assignment。</p>
+</section>
+<section id="ch24">
+<h2>24. GR00T N1.5 + RL 学习方法</h2>
+<h3>24.1 分析维度</h3>
+<ol>
+<li>输入模态</li>
+<li>机器人状态表示</li>
+<li>动作表示</li>
+<li>多任务训练方式</li>
+<li>多机器人适配方式</li>
+<li>推理频率和动作频率</li>
+<li>fine-tuning / RL 接口</li>
+</ol>
+<h3>24.2 推荐训练策略</h3>
+<pre>不建议：直接 PPO 全参训练整个大模型
+
+推荐：
+冻结 vision encoder
+冻结 language backbone
+只训练 action head
+或训练 adapter / LoRA</pre>
+<h3>24.3 GR00T + PPO 流程</h3>
+<pre>加载 checkpoint
+→ 冻结 backbone
+→ 接入仿真环境
+→ 收集 rollout
+→ 计算 reward
+→ 用 GAE 计算 advantage
+→ PPO 更新 action head
+→ 评估 success rate
+→ 保存 checkpoint</pre>
+</section>
+<section id="ch25">
+<h2>25. SO-101 真机强化学习实战</h2>
+<h3>25.1 硬件检查</h3>
+<ul>
+<li>机械结构是否牢固</li>
+<li>舵机 ID、关节方向、机械限位是否正确</li>
+<li>夹爪是否正常开合</li>
+<li>供电是否稳定</li>
+<li>通信与相机是否正常</li>
+<li>急停是否可用</li>
+</ul>
+<h3>25.2 LeRobot 学习模块</h3>
+<pre>robot config
+teleoperation
+dataset
+policy
+training
+evaluation
+replay
+visualization</pre>
+<h3>25.3 数据采集流程</h3>
+<pre>任务定义
+→ 硬件检查
+→ 校准
+→ 遥操作测试
+→ 采集成功轨迹
+→ 采集失败轨迹
+→ 标注 success/failure
+→ 数据清洗
+→ 训练 policy
+→ 真机低速验证</pre>
+<h3>25.4 episode 字段</h3>
+<pre>episode_id
+timestamp
+instruction
+camera_image
+robot_state
+action
+gripper_state
+success
+failure_reason
+operator
+intervention_flag</pre>
+</section>
+<section id="ch26">
+<h2>26. HIL-SERL 算法实操</h2>
+<h3>26.1 核心流程</h3>
+<pre>初始策略执行
+→ 机器人自主尝试
+→ 人类观察
+→ 即将失败时人类接管
+→ 接管数据进入 replay buffer
+→ RL 使用自主数据 + 干预数据更新策略
+→ 机器人逐步减少干预</pre>
+<h3>26.2 Transition 字段</h3>
+<pre>{
+  "obs": o_t,
+  "action": a_t,
+  "reward": r_t,
+  "next_obs": o_{t+1},
+  "done": done,
+  "intervention": 0 or 1,
+  "expert_action": a_expert,
+  "success": 0 or 1
+}</pre>
+<h3>26.3 Reward 示例</h3>
+<p>\[r=10\cdot success+2\cdot grasp\_success-5\cdot collision-10\cdot object\_drop-1\cdot intervention-0.1\cdot \|a\|\]</p>
+<h3>26.4 安全机制</h3>
+<ul>
+<li>动作限幅、速度限幅</li>
+<li>工作空间限制</li>
+<li>力阈值与碰撞检测</li>
+<li>急停、人工接管、异常自动停止</li>
+<li>失败自动回退</li>
+</ul>
+<h3>26.5 评估指标</h3>
+<table>
+<tr><th>指标</th><th>含义</th></tr>
+<tr><td>autonomous success rate</td><td>无干预成功率</td></tr>
+<tr><td>intervention count</td><td>平均干预次数</td></tr>
+<tr><td>total success rate</td><td>包含干预后的总成功率</td></tr>
+<tr><td>collision rate</td><td>碰撞率</td></tr>
+<tr><td>recovery success</td><td>恢复成功率</td></tr>
+</table>
+</section>
+<section id="ch27">
+<h2>27. π 系列模型训练实操</h2>
+<h3>27.0 π 系列架构演进：pi0 → pi0.5 → pi*0.6 → pi0.7</h3>
+<p>Physical Intelligence（π）推出的模型系列代表了业界最前沿的通用 VLA 技术路线，各版本在架构和能力上持续演进。</p>
+<table>
+<tr><th>版本</th><th>核心架构</th><th>动作表示</th><th>训练数据规模</th><th>主要特点</th><th>已知局限</th></tr>
+<tr><td><strong>π0（pi0）</strong></td><td>PaliGemma backbone + Flow Matching head</td><td>FM action chunk（50Hz）</td><td>数百任务，跨机器人</td><td>首个大规模通用 VLA，支持多机器人平台；FM head 动作流畅度远超 diffusion</td><td>推理延迟较高，对新任务需要 fine-tuning</td></tr>
+<tr><td><strong>π0.5（pi0.5）</strong></td><td>π0 + 语言理解增强 + 长视野推理</td><td>FM action chunk + 语言规划</td><td>显著扩大，含语言-动作对齐数据</td><td>加入高层任务规划，支持更长任务序列；语言理解能力大幅提升</td><td>训练成本高，完整复现困难</td></tr>
+<tr><td><strong>π*0.6（pi*0.6）</strong></td><td>π0.5 + RL fine-tuning（PPO/GRPO）</td><td>FM action chunk</td><td>π0.5 基础上 + RL rollout 数据</td><td>首次将 RL 系统性引入 π 系列；任务成功率和纠偏能力显著提升</td><td>FM head 接 RL 的 log-prob 计算需近似，稳定性挑战较大</td></tr>
+<tr><td><strong>π0.7（pi0.7）</strong></td><td>架构优化 + 多模态感知增强</td><td>FM action chunk（频率提升）</td><td>持续扩充，含真机 RL 数据</td><td>推理速度提升，多摄像头融合增强；真机泛化能力进一步提高</td><td>部分细节未公开</td></tr>
+</table>
+<div class="note">
+<strong>关键技术演进脉络：</strong>π0 奠定 FM head 基础 → π0.5 增强语言-动作对齐 → π*0.6 引入 RL 强化成功率 → π0.7 推理效率与真机鲁棒性提升。每一步演进对应一类核心工程挑战的解决。
+</div>
+<h3>27.1 学习重点</h3>
+<ul>
+<li>输入模态（RGB 图像数量、语言指令格式）</li>
+<li>动作表示（action chunk 长度、FM vs diffusion）</li>
+<li>是否支持多机器人（embodiment token）</li>
+<li>是否支持 LoRA / adapter fine-tuning</li>
+<li>推理延迟与显存需求</li>
+<li>RL 接入方式（π*0.6 的 log-prob 近似策略）</li>
+</ul>
+<h3>27.2 pi0.5 训练与真机验证流程</h3>
+<pre>数据准备
+→ 将真机轨迹转换为 LeRobot / HDF5 格式
+→ 检查 observation / action 时间戳对齐
+→ 加载 π0.5 预训练权重
+→ 配置 LoRA（仅 action head / cross-attn 层）
+→ 多任务混合训练（避免 catastrophic forgetting）
+→ 离线评估（LIBERO success rate）
+→ 真机低速验证（0.3× 速度）
+→ 记录失败类型（抓取 / 放置 / 超时）
+→ 补充失败样本重训</pre>
+<div class="warn">
+<strong>pi0.5 真机验证关键注意事项：</strong>首次真机测试必须设置速度限制（建议 0.3×），action chunk 执行时保持急停可触达，优先验证夹爪开合和末端位姿精度，再测试完整任务。
+</div>
+<h3>27.3 pi*0.6 训练与真机验证流程（RL 版本）</h3>
+<pre>以 π0.5 fine-tuned checkpoint 为起点
+→ 构建仿真环境（Isaac Lab 推荐）
+→ 配置 rollout worker：固定 backbone，仅采样 action head 输出
+→ FM head 的 log-prob 近似：使用小步数 DDIM 近似得分函数
+→ 设计分阶段 reward（接近 → 抓取 → 放置 → 成功）
+→ PPO 更新：只更新 action head，冻结 vision encoder 和 LLM backbone
+→ KL 约束防止动作分布崩塌（参考 KL 系数 0.01~0.1）
+→ 仿真 success rate 达标后迁移到真机
+→ 真机低速验证 → 逐步提速 → 全速评估</pre>
+<h3>27.4 RTC 技术</h3>
+<p>RTC（Real-Time Control）关注模型推理频率与机器人控制器频率的匹配问题：</p>
+<ul>
+<li><strong>推理频率：</strong>π 系列通常以 10~50Hz 生成 action chunk</li>
+<li><strong>控制器频率：</strong>关节控制通常需要 100~500Hz</li>
+<li><strong>解决方案：</strong>action chunk 内插值（线性或样条），保持控制连续性</li>
+<li><strong>动作覆盖策略：</strong>新 chunk 到达时，平滑切换（weighted blending）避免突变</li>
+<li><strong>图像延迟处理：</strong>时间戳对齐，补偿相机捕获延迟（通常 30~80ms）</li>
+<li><strong>异常中断：</strong>关节速度超限或力矩异常时立即停止并回退到安全姿态</li>
+</ul>
+<h3>27.5 RECAP 理解</h3>
+<pre>轨迹回放（Replay）
+→ 阶段切分（Phase Segmentation）：按任务子目标划分片段
+→ 动作质量评估（Quality Assessment）：识别抖动、超速、失败段
+→ 失败片段定位（Failure Localization）：精确到帧级别
+→ 重新标注（Re-label）：修正失败段的 success 标签
+→ 数据重采样（Re-sample）：失败样本上采样 2~5×
+→ 再次训练（Retrain）：加入重采样数据后重新 fine-tune</pre>
+</section>
+<section id="ch28">
+<h2>28. VLA + RL 求职分析与简历指导</h2>
+<h3>28.1 主流机器人公司 RL 岗位解析</h3>
+<table>
+<tr><th>公司</th><th>典型岗位</th><th>核心技术要求</th><th>机器人方向</th></tr>
+<tr><td>Physical Intelligence（π）</td><td>Research Scientist / Engineer（RL）</td><td>VLA fine-tuning、FM/Diffusion head、RL 系统设计</td><td>通用操作</td></tr>
+<tr><td>NVIDIA（Isaac Lab）</td><td>Robot Learning Engineer</td><td>Isaac Sim、PPO/SAC、GPU 并行 RL、GR00T</td><td>人形 / 工业</td></tr>
+<tr><td>Figure AI / Agility Robotics</td><td>ML Engineer（Loco + Manipulation）</td><td>全身控制 RL、接触动力学、sim2real</td><td>人形机器人</td></tr>
+<tr><td>Boston Dynamics</td><td>Controls &amp; Learning Engineer</td><td>传统控制 + RL 混合、Spot / Atlas 平台</td><td>四足 / 人形</td></tr>
+<tr><td>国内（宇树、智元、星动纪元等）</td><td>算法工程师（具身智能）</td><td>VLA、PPO/GRPO、仿真评测、真机部署</td><td>人形 / 轮式</td></tr>
+<tr><td>大模型公司具身部门（字节、阿里等）</td><td>研究员 / 工程师（VLA-RL）</td><td>VLM + RL 融合、GRPO/DPO、大规模训练</td><td>通用机器人</td></tr>
+</table>
+<h3>28.2 能力需求解读</h3>
+<p>岗位 JD 中常见的关键词对应的真实能力要求：</p>
+<table>
+<tr><th>JD 关键词</th><th>真实考察点</th><th>准备方式</th></tr>
+<tr><td>强化学习算法</td><td>PPO / SAC 原理 + 超参数调优经验</td><td>CartPole PPO + MuJoCo SAC 实验报告</td></tr>
+<tr><td>具身智能 / VLA</td><td>VLA 架构理解 + 至少一个系统的 fine-tuning 经验</td><td>OpenVLA 或 LeRobot 实操</td></tr>
+<tr><td>仿真环境</td><td>Isaac Sim / MuJoCo 搭建 + reward 设计能力</td><td>LIBERO 或 RoboTwin 环境配置文档</td></tr>
+<tr><td>真机部署</td><td>真机数据采集、校准、安全机制设计</td><td>SO-101 + LeRobot 遥操作记录</td></tr>
+<tr><td>Sim2Real</td><td>domain randomization、观测噪声、动力学随机化</td><td>阅读 Isaac Lab sim2real 文档 + 实验</td></tr>
+<tr><td>大模型训练</td><td>分布式训练、显存优化、LoRA/adapter</td><td>HuggingFace PEFT 框架使用记录</td></tr>
+</table>
+<h3>28.3 基于 AI 的技能储备方法</h3>
+<p>善用 AI 工具可以显著加速 VLA + RL 领域的学习效率。以下是系统性的 AI 辅助学习方法：</p>
+<div class="note">
+<strong>方法一：用 AI 做论文精读加速器</strong><br/>
+上传论文 PDF，要求 AI 提炼：核心贡献（1句话）、架构图解读、训练流程、实验设计、与已知方法的差异。每篇论文精读时间从4小时压缩到45分钟。
+</div>
+<div class="note">
+<strong>方法二：用 AI 做代码导读</strong><br/>
+将代码仓库关键文件（trainer.py, policy.py, env.py）上传，要求 AI 按"数据流向"解读：输入从哪里来 → 怎么处理 → 损失在哪里计算 → 参数如何更新。重点问 AI：「这个函数在整个训练流程里是第几步被调用的？」
+</div>
+<div class="note">
+<strong>方法三：用 AI 做面试模拟</strong><br/>
+给 AI 设定角色：「你是机器人算法岗面试官，请用追问方式考察我对 PPO 的理解，从基本定义问到工程细节。」每次面试练习后要求 AI 给出评分和改进建议。
+</div>
+<div class="note">
+<strong>方法四：用 AI 辅助实验设计</strong><br/>
+描述你的实验目标和当前结果，请 AI 帮助：设计 ablation study、分析 reward 曲线异常、推荐超参数调整方向。注意 AI 的建议需要结合你的实际仿真环境验证。
+</div>
+<div class="note">
+<strong>方法五：用 AI 做简历项目包装</strong><br/>
+将实验记录、代码和结果数据提供给 AI，要求按「背景 → 方法 → 挑战 → 结果 → 影响」结构重新撰写项目描述，确保技术准确性的同时提升表达清晰度。
+</div>
+<div class="warn">
+<strong>AI 辅助学习的边界：</strong>AI 适合帮助理解概念、加速信息检索、辅助代码调试；但工程直觉（为什么这个 reward 形状有效）、调参感（什么情况下降低 clip epsilon）和真机操作经验必须通过亲手实践获得。不要让 AI 帮你跳过实验，而是让 AI 帮你从实验中学到更多。
+</div>
+<h3>28.4 高频面试问题与参考回答框架</h3>
+<ol>
+<li><strong>什么是 MDP？</strong>——五元组定义 → Bellman 方程 → 为什么机器人任务适合 MDP 建模</li>
+<li><strong>PPO 和 SAC 区别？</strong>——在线/离线、动作空间、有无熵正则、适合场景对比</li>
+<li><strong>为什么机器人 RL 难？</strong>——采样成本、reward 稀疏、安全约束、sim2real gap 四点展开</li>
+<li><strong>模仿学习有什么局限？</strong>——分布偏移、错误累积、无失败恢复、目标函数与成功率不等价</li>
+<li><strong>VLA 如何输出动作？</strong>——action token / action chunk / FM head 三种方式及各自优缺点</li>
+<li><strong>GRPO 如何用于 VLA？</strong>——无 Critic、组内 rollout、组内基线归一化、credit assignment 挑战</li>
+<li><strong>DPO 如何用于轨迹偏好？</strong>——chosen/rejected 轨迹对、隐式 reward model、与 RLHF 的关系</li>
+<li><strong>HIL-SERL 如何工作？</strong>——干预信号采集、干预数据进 replay buffer、逐步减少干预率</li>
+<li><strong>真机 RL 如何保证安全？</strong>——动作限幅、工作空间约束、力矩阈值、急停、人工接管五层机制</li>
+<li><strong>FM head 接 RL 的难点是什么？</strong>——log-prob 计算需近似，DDIM 步数影响近似质量和训练速度</li>
+</ol>
+<h3>28.5 简历描述模板</h3>
+<pre>负责 VLA + RL 机器人操作策略训练流程设计；
+完成模仿学习、强化学习和人在环干预的数据闭环；
+对比 PPO、SAC、DPO、GRPO 在机器人操作中的适用性；
+设计 reward、success rate、intervention count、collision rate 等评估指标；
+基于仿真 benchmark（LIBERO / RoboTwin）完成策略训练与失败分析；
+整理真机部署中的安全约束、动作限幅和人工接管机制；
+[可选] 基于 SO-101 完成端到端 HIL-SERL 真机 RL 实验，成功率提升 XX%。</pre>
+</section>
+<section id="plan">
+<h2>29. 12 周学习计划</h2>
+<table>
+<tr><th>周期</th><th>内容</th><th>输出物</th></tr>
+<tr><td>第 1 周</td><td>VLA 范式、模仿学习局限</td><td>VLA 架构图、模仿学习局限分析</td></tr>
+<tr><td>第 2-3 周</td><td>MDP、Bellman、策略梯度、GAE</td><td>公式推导笔记</td></tr>
+<tr><td>第 4 周</td><td>DQN、PPO 基础实验</td><td>CartPole / PPO 实验报告</td></tr>
+<tr><td>第 5 周</td><td>SAC、DDPG、A3C</td><td>连续控制实验报告</td></tr>
+<tr><td>第 6 周</td><td>DPO、GRPO</td><td>偏好数据与多轨迹优化方案</td></tr>
+<tr><td>第 7-8 周</td><td>LIBERO / RoboTwin</td><td>benchmark 对比表、失败案例报告</td></tr>
+<tr><td>第 9 周</td><td>RLiNF / Lingbot-VLA + RL / GR00T</td><td>项目代码结构分析</td></tr>
+<tr><td>第 10-11 周</td><td>SO-101 / LeRobot / HIL-SERL / π 系列</td><td>真机数据采集规范、HIL 实验方案</td></tr>
+<tr><td>第 12 周</td><td>项目复盘与求职表达</td><td>简历项目描述、面试问答库</td></tr>
+</table>
+</section>
+<section id="appendix">
+<h2>附录：笔记模板与实验报告模板</h2>
+<h3>算法学习模板</h3>
+<pre>算法名称：
+解决什么问题：
+数学核心：
+关键公式：
+算法流程：
+适合机器人任务：
+不适合任务：
+简单例子：
+与 VLA 的结合方式：
+常见误区：</pre>
+<h3>实验报告模板</h3>
+<pre>实验名称：
+环境：
+任务目标：
+状态空间：
+动作空间：
+reward 设计：
+算法：
+关键超参数：
+训练曲线：
+评估指标：
+成功案例：
+失败案例：
+问题分析：
+下一步改进：</pre>
+<h3>VLA + RL 项目复盘模板</h3>
+<pre>项目目标：
+机器人平台：
+VLA 模型：
+数据来源：
+动作表示：
+RL 算法：
+reward / preference 设计：
+训练流程：
+评估指标：
+真机安全机制：
+主要失败类型：
+改进方案：
+可写入简历的成果：</pre>
+<div class="goal">
+<strong>最终主线：</strong>
+VLA 提供初始泛化策略；模仿学习提供基础动作能力；PPO / GRPO / DPO / SAC 提供不同层面的策略优化；HIL-SERL 提供真机安全在线学习；传统控制和安全机制负责工程兜底。
+</div>
+</section>
+<section id="advanced-dp-fm">
+<h2>第 30 章：VLA 中常见的 DP 与 FM 算法</h2>
+<div class="goal">
+<strong>本章目标：</strong>系统理解 VLA 中两类最常见的连续动作生成算法：Diffusion Policy（DP，扩散策略）与 Flow Matching（FM，流匹配策略）。它们解决的是同一个核心问题：如何让 VLA 在高维、连续、多峰的动作空间中稳定生成一段可执行的机器人动作序列。
+</div>
+<h3>30.1 为什么 VLA 需要 DP / FM</h3>
+<p>传统 VLA 可以把动作离散成 token，然后像语言模型一样自回归生成动作。但是机器人底层控制通常是连续的，例如末端位置、姿态、夹爪开合或关节角。直接把连续动作离散化会带来精度损失，而直接用 MSE 回归动作又容易出现“平均化”问题。</p>
+<p>例如同一个观察下，专家可能有两种都合理的绕障路径：</p>
+<pre>路径 A：从左侧绕过去抓取
+路径 B：从右侧绕过去抓取</pre>
+<p>如果用普通 MSE 训练，模型可能预测出左右路径的平均动作，结果变成一条中间的无效路径。DP 和 FM 的价值就在这里：它们不是只预测一个平均动作，而是学习整个条件动作分布。</p>
+<h3>30.2 动作生成问题的统一表示</h3>
+<p>VLA 的动作生成可以写成：</p>
+<div class="formula">\[
+\pi_\theta(A_t \mid o_t, l) 
+\]</div>
+<p>其中：</p>
+<ul>
+<li>\(o_t\)：当前观测，包括图像、机器人状态、历史动作等；</li>
+<li>\(l\)：语言指令；</li>
+<li>\(A_t\)：未来一段动作，也叫 action chunk；</li>
+<li>\(\pi_\theta\)：VLA 的动作策略。</li>
+</ul>
+<p>Action chunk 通常写成：</p>
+<div class="formula">\[
+A_t = [a_t, a_{t+1}, ..., a_{t+H-1}]
+\]</div>
+<p>这里 \(H\) 是预测窗口长度。DP 与 FM 都常用于生成这个 action chunk。</p>
+<h3>30.3 Diffusion Policy 的核心思想</h3>
+<p>Diffusion Policy 将机器人策略建模为一个<strong>条件去噪扩散过程</strong>。它的直观过程是：</p>
+<pre>训练阶段：
+真实动作序列 → 加噪声 → 学会如何去噪
+
+推理阶段：
+随机噪声动作 → 逐步去噪 → 得到可执行动作序列</pre>
+<p>Diffusion Policy 论文将机器人视觉运动策略表示为 conditional denoising diffusion process，并强调它适合多峰动作分布、高维动作空间和稳定训练；论文还引入了 receding horizon control、visual conditioning 和 time-series diffusion transformer 等关键设计。</p>
+<h3>30.4 Diffusion Policy 的数学建模</h3>
+<h4>29.4.1 前向加噪过程</h4>
+<p>设真实动作序列为 \(x_0\)，例如：</p>
+<div class="formula">\[
+x_0 = A_t = [a_t, a_{t+1}, ..., a_{t+H-1}]
+\]</div>
+<p>扩散模型逐步给动作加噪：</p>
+<div class="formula">\[
+q(x_k \mid x_{k-1}) = \mathcal{N}(\sqrt{1-\beta_k}x_{k-1}, \beta_k I)
+\]</div>
+<p>经过多步后，动作序列会逐渐变成近似高斯噪声。</p>
+<p>也可以直接写成：</p>
+<div class="formula">\[
+x_k = \sqrt{\bar{\alpha}_k}x_0 + \sqrt{1-\bar{\alpha}_k}\epsilon, \quad \epsilon \sim \mathcal{N}(0,I)
+\]</div>
+<p>其中：</p>
+<ul>
+<li>\(\beta_k\)：第 k 步噪声强度；</li>
+<li>\(\alpha_k = 1 - \beta_k\)；</li>
+<li>\(\bar{\alpha}_k = \prod_{i=1}^{k}\alpha_i\)。</li>
+</ul>
+<h4>29.4.2 反向去噪过程</h4>
+<p>模型要学习从噪声动作 \(x_k\) 恢复到干净动作 \(x_0\)。训练一个网络：</p>
+<div class="formula">\[
+\epsilon_\theta(x_k, k, c)
+\]</div>
+<p>其中 \(c\) 是条件信息：</p>
+<pre>c = 图像特征 + 语言特征 + 机器人状态特征</pre>
+<p>训练目标通常是预测噪声：</p>
+<div class="formula">\[
+L_{DP} = \mathbb{E}_{x_0, k, \epsilon}\left[\|\epsilon - \epsilon_\theta(x_k, k, c)\|^2\right]
+\]</div>
+<p>这个公式的含义是：给真实动作加噪，然后让模型预测“加进去的噪声是多少”。模型学会去噪后，推理时就能从随机噪声逐步生成动作。</p>
+<h4>29.4.3 推理过程</h4>
+<p>推理时从随机噪声开始：</p>
+<div class="formula">\[
+x_K \sim \mathcal{N}(0,I)
+\]</div>
+<p>然后迭代去噪：</p>
+<div class="formula">\[
+x_{k-1} = f_\theta(x_k, k, c)
+\]</div>
+<p>最终得到：</p>
+<div class="formula">\[
+x_0 = A_t
+\]</div>
+<p>也就是未来一段机器人动作。</p>
+<h3>30.5 Diffusion Policy 的工程结构</h3>
+<pre>多视角图像
+  ↓
+视觉编码器 CNN / ViT
+  ↓
+语言指令
+  ↓
+语言编码器 / VLM
+  ↓
+机器人状态
+  ↓
+状态编码器
+  ↓
+条件特征 c
+  ↓
+噪声动作序列 x_k + 时间步 k
+  ↓
+Diffusion Transformer / UNet
+  ↓
+预测噪声 ε 或预测干净动作
+  ↓
+逐步去噪
+  ↓
+Action Chunk
+  ↓
+Receding Horizon 执行前几步动作</pre>
+<h3>30.6 Receding Horizon Control</h3>
+<p>Diffusion Policy 通常一次生成一段动作，但不会把整段都执行完，而是采用滚动时域控制：</p>
+<pre>第 1 次推理：生成 16 步动作，只执行前 4 步
+第 2 次推理：重新看图像，再生成 16 步动作，只执行前 4 步
+第 3 次推理：继续滚动</pre>
+<p>优点是兼顾动作平滑性和闭环纠偏能力。</p>
+<h3>30.7 DP 的优点与问题</h3>
+<table>
+<tr><th>维度</th><th>优点</th><th>问题</th></tr>
+<tr><td>动作分布</td><td>能表示多峰动作分布</td><td>推理需要多步去噪</td></tr>
+<tr><td>动作空间</td><td>适合高维连续动作</td><td>实时性压力较大</td></tr>
+<tr><td>训练</td><td>训练稳定</td><td>对数据质量敏感</td></tr>
+<tr><td>机器人执行</td><td>动作平滑</td><td>闭环响应取决于 receding horizon 设计</td></tr>
+<tr><td>VLA 结合</td><td>适合作为 action head</td><td>RL credit assignment 较复杂</td></tr>
+</table>
+<h3>30.8 DP 的简单例子：抓取方块</h3>
+<p>任务：把桌上的方块抓起来。</p>
+<pre>输入条件 c：
+- 摄像头图像
+- 指令：“抓起红色方块”
+- 当前机械臂状态
+
+真实 action chunk：
+[接近方块, 下压, 调整姿态, 闭合夹爪, 抬起]
+
+训练：
+给 action chunk 加噪声，让模型学习去噪。
+
+推理：
+从随机噪声开始，逐步生成接近、抓取、抬起的动作序列。</pre>
+<h3>30.9 Flow Matching 的核心思想</h3>
+<p>Flow Matching 与 Diffusion 一样，也是生成模型，但它不是学习多步去噪，而是学习一个连续时间的速度场，把简单分布中的噪声样本连续变换为真实动作分布中的样本。</p>
+<p>直观理解：</p>
+<pre>Diffusion：像“反复擦除噪声”，一步步把噪声动作去噪成真实动作。
+Flow Matching：像“沿着一条流线运动”，把噪声动作连续搬运到真实动作。</pre>
+<p>π0 论文提出在预训练 VLM 之上构建 flow matching VLA，用较大的 VLM backbone 处理语义信息，并用较小的 action expert 处理机器人状态和动作；论文指出这种方式用于高频 action chunks 和灵巧操作。</p>
+<h3>30.10 Flow Matching 的数学建模</h3>
+<h4>29.10.1 起点和终点</h4>
+<p>设：</p>
+<ul>
+<li>\(x_0\)：从简单分布采样的噪声动作；</li>
+<li>\(x_1\)：真实专家动作序列；</li>
+<li>\(t \in [0,1]\)：连续时间。</li>
+</ul>
+<p>构造一条从噪声到真实动作的路径：</p>
+<div class="formula">\[
+x_t = (1-t)x_0 + t x_1
+\]</div>
+<p>这是一条最简单的线性插值路径。</p>
+<h4>29.10.2 目标速度场</h4>
+<p>对 \(x_t\) 关于 \(t\) 求导：</p>
+<div class="formula">\[
+\frac{d x_t}{dt} = x_1 - x_0
+\]</div>
+<p>这就是从噪声动作流向真实动作的目标速度。</p>
+<h4>29.10.3 网络学习速度场</h4>
+<p>训练一个网络：</p>
+<div class="formula">\[
+v_\theta(x_t, t, c)
+\]</div>
+<p>让它预测当前点 \(x_t\) 在时间 \(t\) 应该沿哪个方向流动。训练目标：</p>
+<div class="formula">\[
+L_{FM} = \mathbb{E}_{x_0, x_1, t}\left[\|v_\theta(x_t, t, c) - (x_1 - x_0)\|^2\right]
+\]</div>
+<p>其中 \(c\) 同样是图像、语言、机器人状态等条件信息。</p>
+<h4>29.10.4 推理过程</h4>
+<p>推理时从噪声动作 \(x_0\) 开始，通过求解常微分方程得到动作：</p>
+<div class="formula">\[
+\frac{dx}{dt} = v_\theta(x,t,c)
+\]</div>
+<p>从 \(t=0\) 积分到 \(t=1\)，得到最终动作序列：</p>
+<div class="formula">\[
+x_1 \approx A_t
+\]</div>
+<h3>30.11 FM 的工程结构</h3>
+<pre>多视角图像 + 语言指令 + 机器人状态
+        ↓
+VLM Backbone / 多模态编码器
+        ↓
+Action Expert
+        ↓
+输入：中间动作 x_t + 时间 t + 条件 c
+        ↓
+预测速度场 vθ(x_t,t,c)
+        ↓
+ODE / Euler 积分
+        ↓
+生成 action chunk
+        ↓
+机器人执行</pre>
+<h3>30.12 DP 与 FM 对比</h3>
+<table>
+<tr><th>维度</th><th>Diffusion Policy</th><th>Flow Matching</th></tr>
+<tr><td>核心学习目标</td><td>学习去噪函数或噪声预测</td><td>学习从噪声到数据的速度场</td></tr>
+<tr><td>数学形式</td><td>随机扩散 / 反向去噪</td><td>连续流 / ODE 变换</td></tr>
+<tr><td>训练目标</td><td>\(\|\epsilon - \epsilon_\theta\|^2\)</td><td>\(\|v_\theta - v^*\|^2\)</td></tr>
+<tr><td>推理</td><td>多步去噪采样</td><td>沿速度场积分</td></tr>
+<tr><td>动作表达</td><td>适合 action chunk</td><td>适合 action chunk</td></tr>
+<tr><td>VLA 应用</td><td>常见于 diffusion action head</td><td>常见于 π0 类 flow VLA</td></tr>
+<tr><td>实时性</td><td>取决于去噪步数</td><td>取决于积分步数</td></tr>
+<tr><td>RL 结合</td><td>可做 reward-weighted diffusion / PPO / DPO</td><td>可做 RWFM / GRPO / RL fine-tuning</td></tr>
+</table>
+<h3>30.13 FM + RL 的基本思路</h3>
+<p>Flow Matching 策略通常先通过 imitation learning 学到动作生成能力，但示教轨迹可能是次优的。因此可以通过 RL 继续优化，使策略超过示教数据本身。相关工作提出了 Reward-Weighted Flow Matching 和基于 GRPO 的 flow-matching policy RL，用于改善来自次优示教的策略。</p>
+<h4>29.13.1 Reward-Weighted Flow Matching</h4>
+<p>如果一条轨迹 reward 更高，就在 FM 训练中给它更大权重：</p>
+<div class="formula">\[
+L_{RWFM} = \mathbb{E}\left[w(R) \cdot \|v_\theta(x_t,t,c) - v^*\|^2\right]
+\]</div>
+<p>其中 \(w(R)\) 可以是：</p>
+<div class="formula">\[
+w(R) = \exp(\eta R)
+\]</div>
+<p>高 reward 轨迹权重大，低 reward 轨迹权重小。</p>
+<h4>29.13.2 GRPO for Flow Matching</h4>
+<p>同一初始状态采样多条 action chunk，得到 reward：</p>
+<div class="formula">\[
+A_i = \frac{R_i - \mu_R}{\sigma_R}
+\]</div>
+<p>用组内相对优势更新策略，使高 reward 的 flow trajectory 概率更高。</p>
+<h3>30.14 DP / FM 在 VLA 中的选择建议</h3>
+<table>
+<tr><th>需求</th><th>优先选择</th><th>原因</th></tr>
+<tr><td>动作平滑、高维连续控制</td><td>DP 或 FM</td><td>二者都优于简单 MSE 回归</td></tr>
+<tr><td>希望复现经典机器人策略</td><td>DP</td><td>Diffusion Policy 资料和复现实验更多</td></tr>
+<tr><td>希望研究 π0 类 VLA</td><td>FM</td><td>π0 采用 VLM + Flow Matching 架构</td></tr>
+<tr><td>希望接 RL / GRPO</td><td>FM 或 DP</td><td>FM 的 trajectory-level 表达与 GRPO 结合自然，DP 也可以做 reward-weighted / preference fine-tuning</td></tr>
+<tr><td>实时控制要求高</td><td>需要实测</td><td>DP 去噪步数和 FM 积分步数都会影响延迟</td></tr>
+</table>
+</section>
+<section id="lingbot-vla-rl-design">
+<h2>第 31 章：Lingbot-VLA + RL 的算法架构设计</h2>
+<div class="goal">
+<strong>本章目标：</strong>将 Lingbot-VLA + RL 从“项目名称”具体化为可实现的算法架构，说明输入输出、模型模块、rollout、reward、GRPO/PPO 训练和 RoboTwin 评测如何组成一个闭环。
+</div>
+<h3>31.1 公开信息边界</h3>
+<p>RLinf 文档说明，Lingbot-VLA 可以作为 native plugin 集成到 RLinf 中，在 RoboTwin 2.0 仿真环境中进行端到端策略评估和强化学习微调。文档还指出 Lingbot-VLA 处理多视角 RGB 图像、理解自然语言任务，并基于 Qwen2.5-VL 通过大模型 backbone 自回归生成高维连续 action chunks。下面的架构设计基于这些公开信息和标准 VLA+RL 框架进行工程化展开。</p>
+<h3>31.2 Lingbot-VLA + RL 的总体架构</h3>
+<pre>RoboTwin 2.0 Environment
+        ↓ observation
+多视角 RGB 图像 + 机器人状态 + 语言任务
+        ↓
+Lingbot-VLA
+  ├── Vision Encoder / Qwen2.5-VL Vision Tower
+  ├── Language Backbone / Qwen2.5-VL
+  ├── Robot State Projector
+  ├── Action Token / Continuous Action Projector
+  └── Action Chunk Decoder
+        ↓
+Action Chunk
+        ↓
+RoboTwin step()
+        ↓
+reward / success / collision / info
+        ↓
+RLinf Rollout Buffer
+        ↓
+GRPO / PPO / DPO-style Update
+        ↓
+LoRA / Adapter / Action Head 参数更新</pre>
+<h3>31.3 Observation 设计</h3>
+<p>RoboTwin 环境中的 observation 建议组织为：</p>
+<pre>{
+  "images": {
+    "head": RGB[H,W,3],
+    "left_wrist": RGB[H,W,3],
+    "right_wrist": RGB[H,W,3]
+  },
+  "robot_state": {
+    "joint_pos": [...],
+    "joint_vel": [...],
+    "eef_pose": [...],
+    "gripper": [...]
+  },
+  "language": "pick up the red block and place it into the bowl",
+  "task_id": "robotwin_task_xxx"
+}</pre>
+<h3>31.4 Action 设计</h3>
+<p>Lingbot-VLA 文档提到高维连续 action chunks，因此建议采用：</p>
+<div class="formula">\[
+A_t = [a_t, a_{t+1}, ..., a_{t+H-1}]
+\]</div>
+<p>其中每个动作可以是：</p>
+<div class="formula">\[
+a_t = [\Delta x, \Delta y, \Delta z, \Delta r_x, \Delta r_y, \Delta r_z, g]
+\]</div>
+<p>如果是双臂任务，可以扩展为：</p>
+<div class="formula">\[
+a_t = [a_t^{left}, a_t^{right}]
+\]</div>
+<p>每个 arm 包含 6D 末端增量和 gripper。</p>
+<h3>31.5 模型内部模块设计</h3>
+<table>
+<tr><th>模块</th><th>作用</th><th>是否建议冻结</th></tr>
+<tr><td>Vision Tower</td><td>编码多视角图像</td><td>初期冻结</td></tr>
+<tr><td>Qwen2.5-VL Backbone</td><td>语言和视觉语义推理</td><td>初期冻结或 LoRA</td></tr>
+<tr><td>Robot State Projector</td><td>把关节、夹爪、末端位姿映射成 token embedding</td><td>可训练</td></tr>
+<tr><td>Action Decoder</td><td>生成 action chunk</td><td>重点训练</td></tr>
+<tr><td>Value Head</td><td>PPO 时估计状态价值</td><td>PPO 需要新增</td></tr>
+<tr><td>Reward / Outcome Head</td><td>可选，用于轨迹打分</td><td>可选</td></tr>
+</table>
+<h3>31.6 Lingbot-VLA + GRPO 训练设计</h3>
+<h4>30.6.1 为什么 GRPO 适合 Lingbot-VLA</h4>
+<p>Lingbot-VLA 是大模型式 VLA，输出 action chunk。GRPO 不强依赖 critic，而是对同一个任务初始状态采样多条轨迹，根据组内 reward 做相对优化。这与大模型生成多个候选输出再比较质量的思路一致。</p>
+<h4>30.6.2 GRPO rollout 流程</h4>
+<pre>for each task instance x:
+    sample G action trajectories from Lingbot-VLA
+    for each trajectory:
+        execute in RoboTwin
+        compute outcome reward
+    normalize rewards within group
+    compute GRPO loss
+    update action decoder / LoRA</pre>
+<h4>30.6.3 轨迹 log probability</h4>
+<p>如果 action chunk 被自回归生成，则整条轨迹 log probability 为：</p>
+<div class="formula">\[
+\log \pi_\theta(Y_i \mid x)
+= \sum_{t=1}^{T} \log \pi_\theta(a_t^i \mid x, a_{1:t-1}^i)
+\]</div>
+<p>其中，\(Y_i=(a_1^i,a_2^i,\ldots,a_T^i)\) 表示第 \(i\) 条轨迹，\(a_{1:t-1}^i\) 表示该轨迹中第 \(t\) 步之前已经生成的动作历史。</p>
+<h4>30.6.4 组内优势</h4>
+<div class="formula">\[
+A_i = \frac{R_i - \mu_R}{\sigma_R + \epsilon}
+\]</div>
+<p>如果 group size 较小，也可以使用：</p>
+<div class="formula">\[
+A_i = R_i - \mu_R
+\]</div>
+<h4>30.6.5 GRPO clipped objective</h4>
+<div class="formula">\[
+r_i(\theta)=\frac{\pi_\theta(Y_i|x)}{\pi_{old}(Y_i|x)}
+\]</div>
+<div class="formula">\[
+L_{GRPO}=\mathbb{E}\left[\min(r_i(\theta)A_i,\text{clip}(r_i(\theta),1-\epsilon,1+\epsilon)A_i)\right]
+\]</div>
+<p>工程实现中还应加入 KL 约束，防止 VLA 偏离 SFT 模型过远：</p>
+<div class="formula">\[
+L = -L_{GRPO} + \beta KL(\pi_\theta || \pi_{ref})
+\]</div>
+<h3>31.7 Reward 设计</h3>
+<p>RoboTwin 中可以使用 outcome reward + dense shaping：</p>
+<pre>R = 10 * success
+  + 2 * grasp_success
+  + 2 * place_success
+  - 5 * collision
+  - 5 * object_drop
+  - 0.1 * action_norm
+  - 0.05 * action_jerk
+  - 1 * timeout</pre>
+<p>如果任务较长，可以把 reward 拆成阶段：</p>
+<table>
+<tr><th>阶段</th><th>奖励</th></tr>
+<tr><td>接近目标</td><td>距离下降给正奖励</td></tr>
+<tr><td>抓取</td><td>夹爪稳定抓住给奖励</td></tr>
+<tr><td>搬运</td><td>物体未掉落给奖励</td></tr>
+<tr><td>放置</td><td>目标区域内给大奖励</td></tr>
+<tr><td>安全</td><td>碰撞、掉落、超时给惩罚</td></tr>
+</table>
+<h3>31.8 PPO 版本设计</h3>
+<p>如果采用 PPO，需要新增 value head：</p>
+<pre>Lingbot-VLA hidden state
+        ↓
+Action Head → action distribution
+Value Head  → V(s)</pre>
+<p>PPO 训练需要保存：</p>
+<pre>obs, action, reward, done, log_prob_old, value, advantage, return</pre>
+<p>此时更适合短 horizon 或中等长度任务，因为 PPO 需要较稳定的 advantage 估计。</p>
+<h3>31.9 DPO 版本设计</h3>
+<p>如果不做在线 RL，也可以用 DPO 做轨迹偏好优化：</p>
+<pre>chosen: 成功、平滑、低碰撞轨迹
+rejected: 失败、掉落、碰撞、抖动轨迹</pre>
+<p>训练目标：</p>
+<div class="formula">\[
+L_{DPO}=-\log\sigma(\beta[(\log\pi_\theta(Y_w|x)-\log\pi_\theta(Y_l|x))-(\log\pi_{ref}(Y_w|x)-\log\pi_{ref}(Y_l|x))])
+\]</div>
+<h3>31.10 Lingbot-VLA + RL 的推荐训练阶段</h3>
+<table>
+<tr><th>阶段</th><th>训练方式</th><th>更新模块</th><th>目标</th></tr>
+<tr><td>阶段 1</td><td>SFT / BC</td><td>Action Head / LoRA</td><td>获得可执行初始策略</td></tr>
+<tr><td>阶段 2</td><td>GRPO 仿真训练</td><td>Action Decoder / LoRA</td><td>提高成功率和泛化</td></tr>
+<tr><td>阶段 3</td><td>DPO 偏好优化</td><td>Action Decoder / LoRA</td><td>减少坏轨迹</td></tr>
+<tr><td>阶段 4</td><td>PPO / HIL</td><td>Value Head + Action Head</td><td>进一步在线优化</td></tr>
+<tr><td>阶段 5</td><td>蒸馏 / 部署优化</td><td>小模型 policy</td><td>降低推理延迟</td></tr>
+</table>
+<h3>31.11 Lingbot-VLA + RL 的关键风险</h3>
+<ul>
+<li><strong>轨迹级 reward 过粗：</strong>会导致动作 token 级 credit assignment 不准。</li>
+<li><strong>大模型采样慢：</strong>RoboTwin 并行环境和 native integration 很重要。</li>
+<li><strong>动作 chunk 太长：</strong>提高平滑性但降低闭环纠偏。</li>
+<li><strong>KL 约束不足：</strong>RL 可能破坏原有语言理解和动作先验。</li>
+<li><strong>仿真 reward hacking：</strong>策略可能学会利用仿真漏洞。</li>
+</ul>
+</section></main></div>
+<section id="groot-n15-rl-design">
+<h2>第 32 章：GR00T N1.5 + RL 的算法架构设计</h2>
+<div class="goal">
+<strong>本章目标：</strong>把 GR00T N1.5 + RL 具体化为一个可实现的算法架构，重点说明其与 DP / FM / PPO / LIBERO 的关系，以及如何设计 action head、value head、rollout 和训练闭环。
+</div>
+<h3>32.1 公开信息边界</h3>
+<p>RLinf 文档说明，GR00T-N1.5 可在 LIBERO 环境中用 PPO 进行 RL fine-tuning，任务包括视觉理解、语言理解、生成位置、旋转和夹爪控制动作，并用环境反馈优化策略。文档还给出 LIBERO 环境、7 维连续动作空间、主视角和腕视角图像等信息。NVIDIA 的 Isaac-GR00T 仓库说明，后续 N1.7 是开放 VLA 模型，采用 vision-language foundation model 与 diffusion transformer head 组合来去噪连续动作；N1.7 支持用自定义数据 fine-tuning 和 inference。这里对 N1.5 + RL 的架构设计以 RLinf 文档为主，并参考 GR00T 系列公开架构风格。</p>
+<h3>32.2 GR00T N1.5 + RL 总体结构</h3>
+<pre>LIBERO / Robosuite / MuJoCo
+        ↓
+Observation:
+  main image + wrist image + robot state + language task
+        ↓
+GR00T-N1.5 Policy
+  ├── Vision Encoder
+  ├── Language Encoder / VLM Backbone
+  ├── Robot State Encoder
+  ├── Multimodal Fusion
+  ├── Diffusion / Continuous Action Head
+  └── PPO Value Head
+        ↓
+7D Continuous Action:
+  Δx, Δy, Δz, Δroll, Δpitch, Δyaw, gripper
+        ↓
+Environment Step
+        ↓
+reward, done, success, info
+        ↓
+PPO Buffer
+        ↓
+GAE + PPO Update
+        ↓
+Action Head / Adapter / LoRA 参数更新</pre>
+<h3>32.3 Observation 与 Action</h3>
+<p>LIBERO 版本建议使用：</p>
+<pre>Observation:
+- main_images: [B, 224, 224, 3]
+- wrist_images: [B, 224, 224, 3]
+- robot_state: joint/eef/gripper state
+- language: environment-provided natural-language task description</pre>
+<p>动作空间为 7 维连续控制：</p>
+<div class="formula">\[
+a_t = [\Delta x, \Delta y, \Delta z, \Delta roll, \Delta pitch, \Delta yaw, g]
+\]</div>
+<h3>32.4 GR00T 的动作头设计：Diffusion Transformer Head</h3>
+<p>GR00T 系列公开仓库说明其架构是 vision-language foundation model 与 diffusion transformer head 的组合，用于去噪连续动作。对于 N1.5 + RL，可以设计成：</p>
+<pre>多模态 hidden tokens
+        ↓
+条件向量 c
+        ↓
+噪声 action chunk x_k
+        ↓
+Diffusion Transformer Head
+        ↓
+预测噪声 εθ 或 denoised action
+        ↓
+连续 action chunk
+        ↓
+取前一步或前几步执行</pre>
+<h3>32.5 PPO 如何接入 Diffusion Action Head</h3>
+<p>标准 PPO 需要 action log probability 和 value。对于 diffusion action head，有两种可选设计：</p>
+<h4>31.5.1 方案 A：外层高斯策略头</h4>
+<p>把 GR00T backbone 当作特征提取器，再接一个高斯 action head：</p>
+<div class="formula">\[
+\mu_\theta, \sigma_\theta = f_\theta(c)
+\]</div>
+<div class="formula">\[
+a_t \sim \mathcal{N}(\mu_\theta, \sigma_\theta)
+\]</div>
+<p>优点是 PPO 实现简单，可以直接计算：</p>
+<div class="formula">\[
+\log \pi_\theta(a_t|s_t)
+\]</div>
+<p>缺点是没有充分利用 diffusion head 的多峰动作建模能力。</p>
+<h4>31.5.2 方案 B：Diffusion Policy 作为 stochastic policy</h4>
+<p>把 diffusion 采样过程视为随机策略，近似计算 action chunk 的 log probability 或使用 surrogate objective。优点是保留 diffusion 动作生成能力；缺点是实现复杂，PPO 的 logprob 和 ratio 计算更难。</p>
+<h4>31.5.3 实用推荐</h4>
+<p>初学和复现阶段建议使用方案 A：冻结大部分 GR00T backbone，用一个连续高斯 action head + value head 跑通 PPO。进阶阶段再研究 diffusion policy 的精确 RL fine-tuning。</p>
+<h3>32.6 Value Head 设计</h3>
+<p>PPO 需要 critic：</p>
+<div class="formula">\[
+V_\phi(s_t)
+\]</div>
+<p>可以在 GR00T 的多模态 hidden state 上加一个 value head：</p>
+<pre>[CLS] / pooled multimodal token
+        ↓
+MLP
+        ↓
+scalar value V(s)</pre>
+<p>训练目标：</p>
+<div class="formula">\[
+L_V = \left(V_\phi(s_t) - R_t\right)^2
+\]</div>
+<h3>32.7 PPO 损失设计</h3>
+<p>采样得到旧策略 logprob：</p>
+<div class="formula">\[
+\log \pi_{old}(a_t|s_t)
+\]</div>
+<p>更新时计算：</p>
+<div class="formula">\[
+r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{old}(a_t|s_t)}
+\]</div>
+<div class="formula">\[
+L^{CLIP}=\mathbb{E}\left[\min(r_t A_t, \text{clip}(r_t,1-\epsilon,1+\epsilon)A_t)\right]
+\]</div>
+<p>总损失：</p>
+<div class="formula">\[
+L = -L^{CLIP} + c_1 L_V - c_2 H(\pi) + \beta KL(\pi_\theta||\pi_{ref})
+\]</div>
+<p>其中 KL 项用于防止 RL 训练破坏预训练策略。</p>
+<h3>32.8 GAE 计算</h3>
+<p>TD error：</p>
+<div class="formula">\[
+\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)
+\]</div>
+<p>GAE：</p>
+<div class="formula">\[
+A_t = \sum_{l=0}^{\infty}(\gamma\lambda)^l\delta_{t+l}
+\]</div>
+<p>return：</p>
+<div class="formula">\[
+R_t = A_t + V(s_t)
+\]</div>
+<h3>32.9 LIBERO Reward 设计</h3>
+<p>LIBERO 任务通常有 success checker，可先用稀疏 reward：</p>
+<pre>r = 1 if success else 0</pre>
+<p>但为了提高学习效率，建议增加 shaping：</p>
+<pre>r = 10 * success
+  + 2 * subgoal_complete
+  - 0.1 * action_norm
+  - 0.05 * action_jerk
+  - 5 * collision
+  - 2 * timeout</pre>
+<h3>32.10 GR00T N1.5 + RL 推荐训练阶段</h3>
+<table>
+<tr><th>阶段</th><th>目标</th><th>训练方式</th><th>更新参数</th></tr>
+<tr><td>阶段 0</td><td>验证数据和环境</td><td>open-loop eval</td><td>不更新</td></tr>
+<tr><td>阶段 1</td><td>建立初始策略</td><td>SFT / BC</td><td>action head / adapter</td></tr>
+<tr><td>阶段 2</td><td>在线仿真优化</td><td>PPO + GAE</td><td>value head + action head</td></tr>
+<tr><td>阶段 3</td><td>多轨迹优化</td><td>GRPO，可选</td><td>action head / LoRA</td></tr>
+<tr><td>阶段 4</td><td>偏好修正</td><td>DPO</td><td>adapter / LoRA</td></tr>
+<tr><td>阶段 5</td><td>部署</td><td>TensorRT / Policy API</td><td>推理优化</td></tr>
+</table>
+<h3>32.11 GR00T + PPO 的伪代码</h3>
+<pre>initialize GR00T policy πθ
+initialize value head Vφ
+freeze vision-language backbone
+for iteration in range(N):
+    trajectories = []
+    for env in parallel_envs:
+        obs = env.reset()
+        while not done:
+            action, logp = πθ.sample_action(obs)
+            value = Vφ(obs)
+            next_obs, reward, done, info = env.step(action)
+            trajectories.append(obs, action, logp, value, reward, done)
+            obs = next_obs
+
+    advantages, returns = compute_GAE(trajectories)
+    for epoch in ppo_epochs:
+        batch = sample_minibatch(trajectories)
+        new_logp = πθ.log_prob(batch.obs, batch.action)
+        ratio = exp(new_logp - batch.old_logp)
+        policy_loss = -min(ratio*A, clip(ratio)*A)
+        value_loss = mse(Vφ(obs), returns)
+        entropy_loss = -entropy(πθ)
+        kl_loss = KL(πθ, πref)
+        loss = policy_loss + c1*value_loss + c2*entropy_loss + β*kl_loss
+        update trainable parameters</pre>
+<h3>32.12 GR00T N1.5 + RL 的关键设计选择</h3>
+<table>
+<tr><th>问题</th><th>推荐选择</th><th>原因</th></tr>
+<tr><td>是否全参训练？</td><td>否</td><td>成本高且易破坏预训练能力</td></tr>
+<tr><td>先 PPO 还是 GRPO？</td><td>先 PPO</td><td>RLinf 文档已有 PPO 设计，critic/GAE 更成熟</td></tr>
+<tr><td>action head 用什么？</td><td>先高斯连续头，进阶 diffusion head</td><td>便于计算 logprob</td></tr>
+<tr><td>reward 用稀疏还是 dense？</td><td>稀疏 + shaping</td><td>加速学习但避免 reward hacking</td></tr>
+<tr><td>评测用什么？</td><td>LIBERO success rate + failure analysis</td><td>语言条件操作任务明确</td></tr>
+</table>
+</section>
+<section id="standard-vla-rl-paradigm">
+<h2>第 33 章：标准 VLA + RL 范式总结</h2>
+<div class="goal">
+<strong>本章目标：</strong>总结一个标准、可复用、可落地的 VLA + RL 范式，便于后续学习、项目设计和复现实验。
+</div>
+<h3>33.1 为什么需要标准范式</h3>
+<p>当前 VLA + RL 方向很容易变成概念堆叠：VLA、PPO、GRPO、DPO、DP、FM、HIL、仿真、真机都放在一起，但不知道每个模块应该承担什么职责。标准范式的作用是把它们分层。</p>
+<h3>33.2 标准范式总览</h3>
+<pre>阶段 A：预训练 / 基础模型
+大规模多机器人、多任务数据 → VLA backbone
+
+阶段 B：监督微调 / 模仿学习
+目标任务示教数据 → SFT / BC / DP / FM action head
+
+阶段 C：仿真 RL
+LIBERO / RoboTwin / ManiSkill → PPO / GRPO / SAC → 提升成功率
+
+阶段 D：偏好优化
+成功轨迹 vs 失败轨迹 → DPO / preference learning
+
+阶段 E：人在环真机优化
+Human intervention → HIL-SERL / safe online RL
+
+阶段 F：部署与闭环迭代
+安全过滤 + 低层控制 + 日志回流 + 数据再训练</pre>
+<h3>33.3 标准系统架构</h3>
+<pre>输入层：
+  多视角图像 / 深度 / 机器人状态 / 语言指令 / 历史动作
+
+VLA 表征层：
+  Vision Encoder + Language Backbone + State Encoder
+
+动作生成层：
+  DP Action Head / FM Action Head / Autoregressive Action Token Head
+
+RL 优化层：
+  PPO：critic-based stable policy improvement
+  GRPO：group relative trajectory optimization
+  DPO：chosen/rejected trajectory preference optimization
+  SAC：low-level continuous residual control
+
+执行与安全层：
+  action filter / workspace limit / velocity limit / force threshold / emergency stop
+
+评估层：
+  success rate / collision rate / intervention count / action smoothness / generalization
+
+数据闭环层：
+  rollout logs / failure cases / human corrections / preference pairs / replay buffer</pre>
+<h3>33.4 各算法在标准范式中的职责</h3>
+<table>
+<tr><th>算法 / 模块</th><th>标准职责</th><th>不建议承担的职责</th></tr>
+<tr><td>VLA Backbone</td><td>语义理解、视觉理解、任务条件化</td><td>独自保证毫米级控制</td></tr>
+<tr><td>DP / FM</td><td>生成连续 action chunk</td><td>独自解决失败恢复</td></tr>
+<tr><td>BC / SFT</td><td>获得初始可执行策略</td><td>直接优化最终成功率</td></tr>
+<tr><td>PPO</td><td>仿真中稳定策略提升</td><td>低样本真机全参训练</td></tr>
+<tr><td>GRPO</td><td>多轨迹相对优化</td><td>无仿真支持的大规模真机采样</td></tr>
+<tr><td>DPO</td><td>成功/失败轨迹偏好学习</td><td>主动探索未知策略</td></tr>
+<tr><td>SAC</td><td>连续控制、接触 residual</td><td>直接训练大规模 VLA backbone</td></tr>
+<tr><td>HIL-SERL</td><td>真机安全在线改进</td><td>替代全部离线训练</td></tr>
+<tr><td>传统控制</td><td>安全、精度、稳定性兜底</td><td>承担开放语义泛化</td></tr>
+</table>
+<h3>33.5 标准训练流程</h3>
+<h4>步骤 1：定义任务与接口</h4>
+<pre>Task:
+  语言指令
+  成功标准
+  失败标准
+  reset 方式
+  observation space
+  action space
+  reward function
+  safety limits</pre>
+<h4>步骤 2：建立 SFT / BC 初始策略</h4>
+<pre>收集示教数据
+↓
+清洗和对齐 observation-action
+↓
+训练 DP / FM / action token policy
+↓
+open-loop eval
+↓
+closed-loop eval</pre>
+<h4>步骤 3：仿真 RL</h4>
+<pre>加载初始 VLA policy
+↓
+并行环境 rollout
+↓
+计算 outcome reward / dense reward
+↓
+PPO / GRPO / SAC 更新
+↓
+评估 success rate
+↓
+保存失败案例</pre>
+<h4>步骤 4：偏好优化</h4>
+<pre>收集成功轨迹和失败轨迹
+↓
+构造 chosen / rejected pairs
+↓
+DPO 训练
+↓
+减少碰撞、抖动、掉落等坏行为</pre>
+<h4>步骤 5：真机人在环</h4>
+<pre>低速上机
+↓
+人类随时接管
+↓
+干预数据进入 buffer
+↓
+HIL-SERL / offline preference update
+↓
+逐步降低干预次数</pre>
+<h4>步骤 6：部署与持续学习</h4>
+<pre>部署 policy
+↓
+记录失败
+↓
+故障分类
+↓
+补充数据
+↓
+重新 SFT / DPO / RL
+↓
+版本化评估</pre>
+<h3>33.6 标准 reward 设计模板</h3>
+<div class="formula">\[
+R = R_{success} + R_{progress} + R_{subgoal} - R_{collision} - R_{unsafe} - R_{jerk} - R_{timeout}
+\]</div>
+<pre>R_success: 任务成功大奖励
+R_progress: 距离目标变近奖励
+R_subgoal: 抓取、对准、放置等阶段奖励
+R_collision: 碰撞惩罚
+R_unsafe: 力过大、越界、速度过大惩罚
+R_jerk: 动作抖动惩罚
+R_timeout: 超时惩罚</pre>
+<h3>33.7 标准评估指标</h3>
+<table>
+<tr><th>指标</th><th>含义</th><th>为什么重要</th></tr>
+<tr><td>Success Rate</td><td>任务成功率</td><td>最终核心指标</td></tr>
+<tr><td>Collision Rate</td><td>碰撞率</td><td>安全性</td></tr>
+<tr><td>Intervention Count</td><td>人类干预次数</td><td>真机自主性</td></tr>
+<tr><td>Episode Length</td><td>完成步数</td><td>效率</td></tr>
+<tr><td>Action Smoothness</td><td>动作平滑程度</td><td>控制质量</td></tr>
+<tr><td>Generalization</td><td>新物体/新位置/新任务表现</td><td>VLA 价值所在</td></tr>
+<tr><td>Failure Type</td><td>失败类别</td><td>指导下一轮数据采集</td></tr>
+<tr><td>Latency</td><td>推理延迟</td><td>部署可行性</td></tr>
+</table>
+<h3>33.8 标准 VLA + RL 项目目录</h3>
+<pre>vla_rl_project/
+├── configs/
+│   ├── task.yaml
+│   ├── model.yaml
+│   ├── rl.yaml
+│   └── safety.yaml
+├── envs/
+│   ├── libero_wrapper.py
+│   ├── robotwin_wrapper.py
+│   └── real_robot_wrapper.py
+├── models/
+│   ├── vla_backbone.py
+│   ├── diffusion_head.py
+│   ├── flow_matching_head.py
+│   ├── value_head.py
+│   └── residual_sac.py
+├── trainers/
+│   ├── sft_trainer.py
+│   ├── ppo_trainer.py
+│   ├── grpo_trainer.py
+│   ├── dpo_trainer.py
+│   └── hil_serl_trainer.py
+├── data/
+│   ├── demonstrations/
+│   ├── rollouts/
+│   ├── preferences/
+│   └── interventions/
+├── eval/
+│   ├── metrics.py
+│   ├── failure_analysis.py
+│   └── report.py
+└── deployment/
+    ├── policy_server.py
+    ├── safety_filter.py
+    └── robot_controller.py</pre>
+<h3>33.9 最推荐的学习型落地路线</h3>
+<table>
+<tr><th>阶段</th><th>最小目标</th><th>不要做什么</th></tr>
+<tr><td>入门</td><td>用 DP 训练一个小任务</td><td>不要一开始训练大 VLA</td></tr>
+<tr><td>进阶</td><td>用 FM 理解 π0 类模型</td><td>不要只背公式</td></tr>
+<tr><td>仿真 RL</td><td>LIBERO / RoboTwin + PPO/GRPO</td><td>不要跳过评估和失败分析</td></tr>
+<tr><td>偏好优化</td><td>DPO 成功/失败轨迹</td><td>不要把 DPO 当成在线探索</td></tr>
+<tr><td>真机</td><td>HIL-SERL + 安全接管</td><td>不要无保护在线探索</td></tr>
+<tr><td>部署</td><td>安全过滤 + 日志回流</td><td>不要只看 demo 成功一次</td></tr>
+</table>
+</section>
+<section id="dp_full">
+<h2>第 34 章：Diffusion Policy（DP）数学原理、推导、工程结构与实例</h2>
+<h3>34.1 为什么 VLA 需要 DP</h3>
+<p>VLA 中的动作不是一个简单标量，而往往是一段连续、高维、强时序相关的动作序列。例如机械臂一次策略输出可能是未来 H 步动作：</p>
+<pre>A_{t:t+H-1} = [a_t, a_{t+1}, ..., a_{t+H-1}]</pre>
+<p>如果用普通 MSE 回归动作，模型容易学到“平均动作”。当同一个观察下存在多种合理动作时，平均动作可能反而不可执行。DP 的核心价值是把动作生成看作条件生成问题：在当前观察 o 和语言指令 l 条件下，从复杂动作分布中采样一段合理动作。</p>
+<h3>34.2 DP 的基本建模</h3>
+<p>设专家动作序列为 <code>x_0</code>，其中：</p>
+<pre>x_0 = A_{t:t+H-1}</pre>
+<p>条件信息为：</p>
+<pre>c = {图像特征, 语言指令, 机器人状态, 历史动作}</pre>
+<p>DP 要学习的是条件分布：</p>
+<pre>p(x_0 | c)</pre>
+<p>也就是在观察和任务条件下，生成一段高质量动作序列。</p>
+<h3>34.3 前向扩散过程：把动作逐步加噪</h3>
+<p>扩散模型先定义一个固定的加噪过程：</p>
+<pre>q(x_k | x_{k-1}) = N(sqrt(1-β_k) x_{k-1}, β_k I)</pre>
+<p>经过 k 步后，可以直接写成：</p>
+<pre>x_k = sqrt(α_bar_k) x_0 + sqrt(1 - α_bar_k) ε</pre>
+<p>其中：</p>
+<ul>
+<li><code>ε ~ N(0, I)</code> 是高斯噪声；</li>
+<li><code>β_k</code> 是噪声调度；</li>
+<li><code>α_k = 1 - β_k</code>；</li>
+<li><code>α_bar_k = Π_{i=1}^k α_i</code>。</li>
+</ul>
+<p>直观理解：动作序列 <code>x_0</code> 被逐渐污染成随机噪声 <code>x_K</code>。</p>
+<h3>34.4 反向去噪过程：从噪声恢复动作</h3>
+<p>训练一个网络 <code>ε_θ</code>，输入为带噪动作、扩散步 k 和条件 c：</p>
+<pre>ε_pred = ε_θ(x_k, k, c)</pre>
+<p>训练目标是预测真实噪声：</p>
+<pre>L_DP = E_{x_0, ε, k} || ε - ε_θ(x_k, k, c) ||²</pre>
+<p>训练完成后，推理时从随机噪声开始：</p>
+<pre>x_K ~ N(0, I)</pre>
+<p>然后多步去噪：</p>
+<pre>x_K → x_{K-1} → ... → x_0</pre>
+<p>最终得到动作序列。</p>
+<h3>34.5 为什么 DP 比普通动作回归更适合机器人</h3>
+<table>
+<tr><th>问题</th><th>普通 MSE 回归</th><th>Diffusion Policy</th></tr>
+<tr><td>多模态动作</td><td>容易平均化</td><td>可表达多峰分布</td></tr>
+<tr><td>高维动作序列</td><td>容易抖动</td><td>整体生成 action chunk</td></tr>
+<tr><td>训练稳定性</td><td>依赖数据一致性</td><td>去噪目标较稳定</td></tr>
+<tr><td>推理速度</td><td>快</td><td>多步去噪较慢</td></tr>
+<tr><td>闭环能力</td><td>取决于频率</td><td>通常结合 receding horizon</td></tr>
+</table>
+<h3>34.6 DP 的工程结构</h3>
+<pre>多视角图像 + 语言 + 机器人状态
+        ↓
+视觉编码器 / VLM / 状态编码器
+        ↓
+条件特征 c
+        ↓
+带噪动作序列 x_k + 扩散步 k
+        ↓
+条件去噪网络 U-Net / Transformer / DiT
+        ↓
+预测噪声 ε 或直接预测干净动作
+        ↓
+多步去噪得到 action chunk
+        ↓
+执行前 N 步，剩余丢弃
+        ↓
+下一帧重新规划</pre>
+<p>这里的“只执行前 N 步”就是 receding horizon control。它的作用是避免一次生成太长动作后开环执行太久。</p>
+<h3>34.7 DP 的最小伪代码</h3>
+<pre>训练：
+for batch in dataset:
+    x0 = action_chunk
+    c  = encode(image, language, state)
+    k  = random_diffusion_step()
+    eps = normal_noise()
+    xk = sqrt(alpha_bar[k]) * x0 + sqrt(1-alpha_bar[k]) * eps
+    eps_pred = denoiser(xk, k, c)
+    loss = mse(eps_pred, eps)
+    update(loss)
+
+推理：
+x = normal_noise(shape=[H, action_dim])
+for k in reversed(range(K)):
+    eps_pred = denoiser(x, k, c)
+    x = denoise_step(x, eps_pred, k)
+execute(x[:exec_horizon])</pre>
+<h3>34.8 简单实例：抓取方块</h3>
+<p>任务：机械臂抓取桌面方块。</p>
+<ul>
+<li>输入：头部相机图像、腕部相机图像、语言“抓起蓝色方块”、当前关节状态；</li>
+<li>输出：未来 16 步末端增量动作，每步为 <code>[Δx, Δy, Δz, Δroll, Δpitch, Δyaw, gripper]</code>；</li>
+<li>训练：从示教数据中切出长度为 16 的 action chunk；</li>
+<li>推理：DP 生成 16 步动作，但只执行前 4 步，然后重新观察和生成。</li>
+</ul>
+<p>这样做的好处是：模型一次生成的动作有时间一致性，但系统仍然保持闭环纠偏能力。</p>
+<h3>34.9 DP 在 VLA 中的位置</h3>
+<pre>VLM / VLA Backbone：理解图像和语言
+DP Action Head：生成连续动作序列
+RL / DPO / GRPO：进一步优化动作分布或偏好
+Safety Filter：限制动作幅度和速度</pre>
+<p>所以 DP 不是完整 VLA，而是 VLA 中非常常见的一种动作生成头。</p>
+</section>
+<section id="fm_full">
+<h2>第 35 章：Flow Matching（FM）数学原理、推导、工程结构与 DP 对比</h2>
+<h3>35.1 FM 解决什么问题</h3>
+<p>Flow Matching 的目标也是从简单分布生成复杂数据分布。与 DP 多步随机去噪不同，FM 学习一个连续时间向量场，让噪声沿着一条路径流动到真实数据。</p>
+<p>在 VLA 中，FM 常用于生成连续 action chunk：</p>
+<pre>随机噪声动作 → 沿向量场流动 → 真实动作序列</pre>
+<h3>35.2 连续流的数学建模</h3>
+<p>设 <code>x_t</code> 是时间 t 的样本，t 从 0 到 1：</p>
+<pre>t = 0: x_0 ~ p_noise
+
+t = 1: x_1 ~ p_data</pre>
+<p>FM 学习一个速度场：</p>
+<pre>dx_t / dt = v_θ(x_t, t, c)</pre>
+<p>其中 c 是条件信息，例如图像、语言和机器人状态。</p>
+<p>推理时从噪声开始，用 ODE 积分：</p>
+<pre>x_{t+Δt} = x_t + Δt · v_θ(x_t, t, c)</pre>
+<p>最后得到动作序列。</p>
+<h3>35.3 最简单的线性路径推导</h3>
+<p>给定噪声样本 <code>x_0 = ε</code> 和真实动作 <code>x_1 = a</code>，定义线性插值路径：</p>
+<pre>x_t = (1 - t) ε + t a</pre>
+<p>对 t 求导：</p>
+<pre>dx_t / dt = a - ε</pre>
+<p>因此真实速度场目标是：</p>
+<pre>u_t = a - ε</pre>
+<p>模型训练目标为：</p>
+<pre>L_FM = E_{a, ε, t} || v_θ(x_t, t, c) - (a - ε) ||²</pre>
+<p>这就是最直观的 FM loss：让网络预测“从当前噪声动作走向真实动作的速度”。</p>
+<h3>35.4 FM 推理过程</h3>
+<pre>输入条件 c = encode(image, language, state)
+x = normal_noise(shape=[H, action_dim])
+for i in range(N_steps):
+    t = i / N_steps
+    v = model(x, t, c)
+    x = x + dt * v
+return x</pre>
+<p>如果使用 10 步 Euler 积分，就要做 10 次动作专家前向推理。</p>
+<h3>35.5 FM 与 DP 的核心区别</h3>
+<table>
+<tr><th>维度</th><th>Diffusion Policy</th><th>Flow Matching</th></tr>
+<tr><td>基本思想</td><td>学习反向去噪</td><td>学习连续速度场</td></tr>
+<tr><td>训练目标</td><td>预测噪声 ε 或 score</td><td>预测向量场 v</td></tr>
+<tr><td>路径</td><td>扩散噪声路径</td><td>可选线性 / OT / diffusion path</td></tr>
+<tr><td>推理</td><td>多步反向采样</td><td>ODE 积分</td></tr>
+<tr><td>随机性</td><td>通常包含随机去噪</td><td>可确定性积分</td></tr>
+<tr><td>VLA 代表</td><td>Diffusion Policy、GR00T diffusion head</td><td>π0、GR00T flow-matching policy</td></tr>
+<tr><td>优点</td><td>成熟、稳定、易理解</td><td>采样路径清晰，可能更高效</td></tr>
+<tr><td>难点</td><td>推理步数和延迟</td><td>ODE 积分、向量场稳定性</td></tr>
+</table>
+<h3>35.6 FM 在 VLA 中的工程结构</h3>
+<pre>图像 + 语言 + 本体状态
+        ↓
+VLM Backbone
+        ↓
+上下文 tokens
+        ↓
+随机动作 chunk x_t + flow timestep t
+        ↓
+Action Expert / DiT / Transformer
+        ↓
+预测速度场 v_θ(x_t, t, c)
+        ↓
+Euler / ODE Solver 积分
+        ↓
+生成连续 action chunk</pre>
+<h3>35.7 简单实例：放置物体</h3>
+<p>任务：把抓住的物体放到指定区域。</p>
+<ul>
+<li>真实动作 chunk：专家示教的未来 20 步末端动作；</li>
+<li>噪声 chunk：同形状高斯噪声；</li>
+<li>中间样本：<code>x_t = (1-t)ε + t a</code>；</li>
+<li>训练目标：预测 <code>a - ε</code>；</li>
+<li>推理：从随机动作 chunk 出发，连续积分到可执行动作 chunk。</li>
+</ul>
+<h3>35.8 DP 和 FM 怎么选择</h3>
+<table>
+<tr><th>场景</th><th>建议</th></tr>
+<tr><td>学习机器人动作生成基础</td><td>先学 DP，更直观</td></tr>
+<tr><td>理解 π0 / GR00T 类新型 VLA</td><td>必须学 FM</td></tr>
+<tr><td>小模型实验</td><td>DP 更容易落地</td></tr>
+<tr><td>追求高频 action chunk 生成</td><td>FM / DiT 架构更值得关注</td></tr>
+<tr><td>和 PPO / GRPO 结合</td><td>两者都可行，但需要定义 logprob 或 surrogate objective</td></tr>
+</table>
+</section>
+<section id="lingbot_full">
+<h2>第 36 章：Lingbot-VLA + RL 具体算法架构设计</h2>
+<h3>36.1 定位</h3>
+<p>Lingbot-VLA + RL 可以理解为：以 Qwen2.5-VL 类视觉语言大模型为 VLA backbone，在 RoboTwin 2.0 仿真环境中做端到端评估和 RL fine-tuning。公开 RLinf 文档中，Lingbot-VLA 采用多视角 RGB 图像、自然语言任务描述，并生成高维连续 action chunk；其动作空间示例为双臂 ALOHA 的 14 维连续动作，action chunk 长度可配置，文档示例为 50。</p>
+<h3>36.2 总体架构</h3>
+<pre>RoboTwin 2.0 环境
+    ↓ observation
+多视角 RGB 图像：head / left wrist / right wrist
+语言任务描述：如 “click the bell”
+机器人状态：可选 joint / gripper / pose
+    ↓
+Lingbot-VLA 输入构造器
+    ↓
+Qwen2.5-VL Backbone
+    ↓
+动作生成模块：自回归 action chunk / Flow-SDE denoising
+    ↓
+连续动作 chunk：长度 H，每步 14D 或任务定义动作维度
+    ↓
+环境执行 rollout
+    ↓
+Reward / Success Checker
+    ↓
+GRPO / PPO-style RL 更新
+</pre>
+<h3>36.3 输入设计</h3>
+<table>
+<tr><th>输入</th><th>设计方式</th><th>作用</th></tr>
+<tr><td>Head RGB</td><td>全局视角</td><td>理解任务场景和目标物体</td></tr>
+<tr><td>Wrist RGB</td><td>左右腕部视角</td><td>精细操作和末端附近观察</td></tr>
+<tr><td>Language</td><td>环境自然语言任务描述</td><td>指定目标和操作语义</td></tr>
+<tr><td>Robot State</td><td>关节、夹爪、末端位姿</td><td>提供本体状态</td></tr>
+<tr><td>History</td><td>历史 observation/action</td><td>缓解 POMDP 和动作连续性问题</td></tr>
+</table>
+<h3>36.4 动作设计</h3>
+<p>以双臂 ALOHA 为例，可以设计为：</p>
+<pre>a_t = [left_x, left_y, left_z, left_roll, left_pitch, left_yaw, left_gripper,
+       right_x, right_y, right_z, right_roll, right_pitch, right_yaw, right_gripper]</pre>
+<p>即 14 维连续动作。模型一次输出：</p>
+<pre>A_t = [a_t, a_{t+1}, ..., a_{t+H-1}]</pre>
+<p>如果 H=50，则表示一次生成未来 50 步动作。工程上通常只执行前 K 步，然后重新观察和生成，以保留闭环能力。</p>
+<h3>36.5 动作生成模块设计</h3>
+<p>Lingbot-VLA 可以采用两种动作生成方式：</p>
+<ol>
+<li><strong>自回归 action chunk：</strong>把动作序列看作连续 token 序列，逐步生成。</li>
+<li><strong>Flow-SDE / FM-style denoising：</strong>从噪声动作出发，结合视觉语言条件生成动作 chunk。</li>
+</ol>
+<p>推荐学习型架构：</p>
+<pre>Qwen2.5-VL 输出多模态上下文 tokens
+        ↓
+Action Query Tokens
+        ↓
+Action Expert / Transformer Decoder
+        ↓
+生成连续 action chunk
+        ↓
+GRPO 以轨迹 reward 更新 action 模块</pre>
+<h3>36.6 GRPO 训练设计</h3>
+<p>对同一个任务初始状态，采样 G 条轨迹：</p>
+<pre>{τ_1, τ_2, ..., τ_G}</pre>
+<p>每条轨迹得到 reward：</p>
+<pre>R_i = R_success - λ_collision C_i - λ_drop D_i - λ_time T_i - λ_jerk J_i</pre>
+<p>组内优势：</p>
+<pre>A_i = (R_i - mean(R)) / (std(R) + ε)</pre>
+<p>GRPO loss：</p>
+<pre>L_GRPO = - E_i [ min(ρ_i A_i, clip(ρ_i, 1-ε_clip, 1+ε_clip) A_i) ] + β KL(π_θ || π_ref)</pre>
+<p>其中：</p>
+<pre>ρ_i = π_θ(τ_i | o, l) / π_old(τ_i | o, l)</pre>
+<h3>36.7 关键工程难点</h3>
+<table>
+<tr><th>难点</th><th>原因</th><th>解决方式</th></tr>
+<tr><td>action chunk 过长</td><td>开环时间太长，误差累积</td><td>receding horizon，只执行前 K 步</td></tr>
+<tr><td>轨迹 reward 粗糙</td><td>成功/失败信号无法定位错误动作</td><td>阶段 reward + 失败类型标签</td></tr>
+<tr><td>GRPO 采样成本高</td><td>每个状态要多条轨迹</td><td>优先仿真并行采样</td></tr>
+<tr><td>大模型更新不稳定</td><td>VLM backbone 太大</td><td>冻结 backbone，只训练 action head / LoRA</td></tr>
+<tr><td>连续动作 logprob 难算</td><td>FM/Flow-SDE 不是简单 categorical token</td><td>使用可计算密度的策略头或 surrogate ratio</td></tr>
+</table>
+<h3>36.8 推荐的 Lingbot-VLA + RL 训练流程</h3>
+<pre>阶段 1：SFT / BC
+    用 RoboTwin 或示教数据训练基础 action chunk 生成能力。
+
+阶段 2：仿真 rollout
+    对每个任务采样多条轨迹，记录成功率和失败类型。
+
+阶段 3：GRPO fine-tuning
+    用组内相对 reward 更新 action head / LoRA。
+
+阶段 4：DPO 辅助
+    把成功轨迹作为 chosen，失败轨迹作为 rejected，做偏好优化。
+
+阶段 5：评估
+    在未见初始状态、未见物体扰动和多任务 split 上测试。
+
+阶段 6：导出部署
+    固定模型参数，加入 safety filter 和动作限幅。</pre>
+</section>
+<section id="groot_full">
+<h2>第 37 章：GR00T N1.5 + RL 具体算法架构设计</h2>
+<h3>37.1 定位</h3>
+<p>GR00T N1 / N1.5 类模型的核心是“VLM 语义理解 + 动作生成模块”。公开资料中，GR00T N1 采用双系统架构：System 2 是视觉语言模块，System 1 是基于 Diffusion Transformer / Flow Matching 的动作模块；N1.5 继续强调 VLM 编码视觉语言观察，再由 DiT 处理机器人状态和带噪动作，并生成连续动作。</p>
+<h3>37.2 总体架构</h3>
+<pre>RGB 图像 + 语言指令
+        ↓
+NVIDIA Eagle / VLM Backbone
+        ↓
+视觉语言 embeddings
+        ↓ cross-attention
+Robot State + Noised Action Chunk
+        ↓
+Diffusion Transformer / Flow-Matching Action Head
+        ↓
+连续 action chunk
+        ↓
+环境执行
+        ↓
+PPO / RLinf RL fine-tuning
+</pre>
+<h3>37.3 LIBERO 中的 GR00T-N1.5 + RL 任务设定</h3>
+<table>
+<tr><th>项目</th><th>设计</th></tr>
+<tr><td>环境</td><td>LIBERO / robosuite / MuJoCo</td></tr>
+<tr><td>任务</td><td>pick-and-place、stacking、opening drawers、spatial rearrangement</td></tr>
+<tr><td>图像</td><td>main view + wrist view RGB，常见 224×224</td></tr>
+<tr><td>状态</td><td>末端位置、姿态、夹爪状态</td></tr>
+<tr><td>动作</td><td>7D 连续动作：3D position + 3D rotation + gripper</td></tr>
+<tr><td>奖励</td><td>稀疏 success/failure reward，可扩展 dense reward</td></tr>
+<tr><td>RL 算法</td><td>PPO + GAE + clip + entropy regularization</td></tr>
+</table>
+<h3>37.4 动作生成头：DiT / FM Policy</h3>
+<p>GR00T 类架构中，VLM 不直接输出动作，而是给动作模块提供条件表示。动作模块可以设计为：</p>
+<pre>输入：
+- VLM embeddings
+- robot state s
+- noised action chunk x_t
+- timestep t
+
+输出：
+- denoising vector / flow velocity / clean action prediction</pre>
+<p>如果使用 FM，训练目标可写为：</p>
+<pre>x_t = (1 - t) ε + t a
+u_t = a - ε
+L_FM = || v_θ(x_t, t, VLM(o,l), s) - u_t ||²</pre>
+<p>如果使用 diffusion denoising，训练目标可写为：</p>
+<pre>x_k = sqrt(α_bar_k) a + sqrt(1-α_bar_k) ε
+L_DP = || ε - ε_θ(x_k, k, VLM(o,l), s) ||²</pre>
+<h3>37.5 PPO 如何接入 GR00T-N1.5</h3>
+<p>PPO 需要：</p>
+<ul>
+<li>动作 <code>a_t</code>；</li>
+<li>动作 log probability <code>log π(a_t|s_t)</code>；</li>
+<li>价值函数 <code>V(s_t)</code>；</li>
+<li>advantage <code>A_t</code>。</li>
+</ul>
+<p>对 GR00T 这种生成式 action head，有三种设计方案：</p>
+<table>
+<tr><th>方案</th><th>设计</th><th>优缺点</th></tr>
+<tr><td>显式高斯策略头</td><td>DiT/FM 输出 action mean 和 std</td><td>logprob 易算，但表达能力较弱</td></tr>
+<tr><td>生成式 surrogate</td><td>用生成路径概率或近似 ratio</td><td>保留生成能力，但实现复杂</td></tr>
+<tr><td>冻结生成头 + residual PPO</td><td>GR00T 输出基础动作，PPO 学 residual</td><td>安全稳定，适合工程落地</td></tr>
+</table>
+<h3>37.6 推荐的 GR00T-N1.5 + PPO 架构</h3>
+<pre>VLM Backbone：冻结或 LoRA 微调
+        ↓
+DiT / FM Action Head：部分微调
+        ↓
+Value Head：新增，用于 V(s)
+        ↓
+PPO Trainer：
+    - rollout
+    - reward
+    - GAE
+    - policy clip
+    - value loss
+    - entropy
+        ↓
+Evaluation：success rate / collision / episode length</pre>
+<p>训练损失：</p>
+<pre>L_total = L_PPO_policy + c1 L_value - c2 H(π) + λ_KL KL(π_θ || π_ref)</pre>
+<p>如果保留 SFT 正则，可加：</p>
+<pre>L_total += λ_BC L_BC</pre>
+<p>这样可以避免 RL 过度破坏原始动作能力。</p>
+<h3>37.7 为什么不建议一开始全参 RL</h3>
+<ul>
+<li>VLM backbone 参数量大，RL 信号稀疏，容易破坏预训练语义能力；</li>
+<li>动作模块本身已经很复杂，直接 RL 训练容易不稳定；</li>
+<li>真机或复杂仿真 rollout 成本高；</li>
+<li>更稳妥的方式是先 SFT，再 RL post-training。</li>
+</ul>
+<h3>37.8 推荐训练流程</h3>
+<pre>阶段 1：准备 SFT 模型
+    使用少量任务数据或已有 checkpoint 得到基础能力。
+
+阶段 2：冻结 VLM
+    只训练 action head、adapter、LoRA 或 value head。
+
+阶段 3：PPO 仿真训练
+    在 LIBERO 中 rollout，计算稀疏/稠密 reward。
+
+阶段 4：加入 BC regularization
+    防止策略远离专家动作分布。
+
+阶段 5：评估和失败分析
+    按 spatial / object / goal / long task split 评估。
+
+阶段 6：导出部署
+    保留 safety filter、动作限幅和回退机制。</pre>
+<h3>37.9 GR00T-N1.5 + RL 与 Lingbot-VLA + RL 的区别</h3>
+<table>
+<tr><th>维度</th><th>Lingbot-VLA + RL</th><th>GR00T-N1.5 + RL</th></tr>
+<tr><td>基础模型</td><td>Qwen2.5-VL 类 VLA</td><td>NVIDIA Eagle / VLM + DiT action module</td></tr>
+<tr><td>环境示例</td><td>RoboTwin 2.0</td><td>LIBERO</td></tr>
+<tr><td>动作示例</td><td>双臂 14D action chunk</td><td>单臂 7D continuous action</td></tr>
+<tr><td>RL 算法</td><td>GRPO 为重点</td><td>PPO 为重点，GRPO 可探索</td></tr>
+<tr><td>动作建模</td><td>自回归 / Flow-SDE action chunk</td><td>Diffusion / Flow Matching Transformer</td></tr>
+<tr><td>训练重点</td><td>多轨迹相对 reward</td><td>PPO + GAE + value function</td></tr>
+</table>
+</section>
+<section id="standard_paradigm_full">
+<h2>第 38 章：标准 VLA + RL 范式总结</h2>
+<h3>38.1 标准范式一句话</h3>
+<p>标准 VLA + RL 范式不是“用 RL 直接训练一个大 VLA”，而是：</p>
+<pre>先用大规模示教 / 多机器人数据训练 VLA 初始策略，
+再在仿真或受控真机中通过 reward、偏好、人类干预和安全约束做 post-training，
+最后用严格评估、失败回流和安全过滤形成闭环。</pre>
+<h3>38.2 标准流程</h3>
+<pre>1. 数据准备
+   - 人类示教
+   - 机器人遥操作
+   - 仿真数据
+   - 失败轨迹
+   - 人类干预数据
+
+2. VLA 监督训练 / SFT
+   - BC / ACT / DP / FM
+   - 学会基础动作能力
+
+3. 仿真 rollout
+   - LIBERO / RoboTwin / RLBench / ManiSkill
+   - 多初始状态、多任务、多扰动
+
+4. Reward / Preference 构造
+   - success reward
+   - distance reward
+   - collision penalty
+   - force penalty
+   - chosen vs rejected
+
+5. RL Post-training
+   - PPO：稳定策略优化
+   - GRPO：多轨迹相对优化
+   - SAC：连续 residual 控制
+   - DPO：偏好轨迹优化
+
+6. 安全约束
+   - action clipping
+   - workspace limit
+   - velocity limit
+   - force threshold
+   - human takeover
+
+7. 评估
+   - success rate
+   - collision rate
+   - intervention count
+   - episode length
+   - failure type
+
+8. 真机小步验证
+   - 低速
+   - 小范围
+   - 有急停
+   - 有人工接管
+
+9. 数据回流
+   - 失败案例重采集
+   - 偏好对构造
+   - DPO / SFT / RL 再训练</pre>
+<h3>38.3 各算法在范式中的位置</h3>
+<table>
+<tr><th>算法</th><th>在标准范式中的位置</th><th>最适合解决的问题</th></tr>
+<tr><td>BC / SFT</td><td>初始策略训练</td><td>让模型先会做基本动作</td></tr>
+<tr><td>DP</td><td>动作生成头</td><td>高维多模态 action chunk</td></tr>
+<tr><td>FM</td><td>动作生成头</td><td>连续动作流生成，高频控制</td></tr>
+<tr><td>PPO</td><td>RL post-training</td><td>稳定提升 success rate</td></tr>
+<tr><td>GRPO</td><td>多轨迹优化</td><td>同状态多轨迹相对比较</td></tr>
+<tr><td>DPO</td><td>偏好优化</td><td>成功/失败轨迹偏好学习</td></tr>
+<tr><td>SAC</td><td>低层连续控制</td><td>接触、插入、residual policy</td></tr>
+<tr><td>HIL-SERL</td><td>真机安全在线学习</td><td>人在环纠偏和干预数据利用</td></tr>
+</table>
+<h3>38.4 标准系统架构</h3>
+<pre>Task Instruction
+        ↓
+VLM / VLA Backbone
+        ↓
+DP / FM / DiT Action Head
+        ↓
+Action Chunk
+        ↓
+Safety Filter
+        ↓
+Robot Controller
+        ↓
+Environment Feedback
+        ↓
+Reward / Preference / Intervention
+        ↓
+PPO / GRPO / DPO / SAC / HIL-SERL
+        ↓
+Updated Policy</pre>
+<h3>38.5 工程落地建议</h3>
+<table>
+<tr><th>阶段</th><th>优先做</th><th>不要做</th></tr>
+<tr><td>入门</td><td>先跑 DP 小任务</td><td>不要直接大模型 RL</td></tr>
+<tr><td>理解 FM</td><td>推导线性路径和速度场</td><td>不要只把 FM 当成扩散换名</td></tr>
+<tr><td>仿真</td><td>LIBERO / RoboTwin 中跑 rollout</td><td>不要只看训练 loss</td></tr>
+<tr><td>RL</td><td>先冻结 backbone，训 action head</td><td>不要全参 PPO</td></tr>
+<tr><td>偏好</td><td>构造 chosen/rejected 轨迹</td><td>不要把 DPO 当在线探索</td></tr>
+<tr><td>真机</td><td>HIL + safety + 低速测试</td><td>不要无保护 online RL</td></tr>
+</table>
+</section>
+<section id="v5-changelog">
+<h2>V5 / V5.2 修订记录：与图片大纲及审查报告的对齐补充</h2><p>V5.3 修复：重建全局导航目录，确保第 32 章之后的进阶章节仍处于同一套左侧导航与正文布局中；同步修正第 30–38 章内部小节编号错位问题，并统一公式块与高级章节排版。</p>
+<table>
+<tr><th>补充项</th><th>对应图片目录</th><th>V5 处理方式</th></tr>
+<tr><td>人才培养方向、学后收获</td><td>1.4 / 1.5</td><td>新增 0.4、0.5，明确课程对象、能力目标和输出成果</td></tr>
+<tr><td>有模型 RL / 无模型 RL</td><td>2.5</td><td>新增 8.4、8.5，补充 Model-Based RL、世界模型、MPC 与 VLA 的关系</td></tr>
+<tr><td>算法选型依据</td><td>3.2</td><td>新增 16.1、16.2，加入工程选型表和决策树</td></tr>
+<tr><td>Lingbot / GR00T 仿真评测</td><td>4.3 / 4.4</td><td>新增 RoboTwin 与 LIBERO 的标准评测流程</td></tr>
+<tr><td>SO-101 真机基础操作</td><td>5.1</td><td>补充组装、硬件验证、LeRobot 代码阅读、校准和采集 SOP</td></tr>
+<tr><td>HIL-SERL 实操</td><td>5.2</td><td>补充代码解读、人在环数据采集、训练配置、真机验证方法</td></tr>
+<tr><td>编号问题</td><td>整体结构</td><td>修正“3.6”位置和“第 29 章”重复编号问题</td></tr>
+<tr><td>V5.2：补齐 Ch8</td><td>审查报告级别一</td><td>实际新增 8.4、8.5，系统补充 Model-Based RL、World Model、MPC 与 VLA 的关系</td></tr>
+<tr><td>V5.2：补齐 Ch16</td><td>审查报告级别一</td><td>实际新增决策树、超参数参考值、训练监控指标和异常诊断表</td></tr>
+<tr><td>V5.2：扩充 Reward</td><td>审查报告级别二</td><td>将 20.4 扩展为 Reward 设计专章，加入稀疏/密集 reward、阶段 shaping、自动 reward、reward hacking 防护</td></tr>
+<tr><td>V5.2：新增 Sim2Real</td><td>审查报告级别二</td><td>新增 domain randomization、观测噪声、动力学随机化、真机验证阶梯和失败诊断表</td></tr>
+<tr><td>V5.2：新增环境快速开始</td><td>审查报告级别四</td><td>在 Ch17 增加 Gymnasium / MuJoCo / Stable-Baselines3 的最小安装与 PPO 快速验证命令</td></tr>
+<tr><td>V5.2：合并参考资料</td><td>审查报告级别四</td><td>删除重复的 sources_v3 摘要章节，仅保留统一的“参考资料与延伸阅读”附录</td></tr>
+</table>
+</section>
+<section id="sources">
+<h2>参考资料与延伸阅读</h2>
+<ul>
+<li>Diffusion Policy: Visuomotor Policy Learning via Action Diffusion, arXiv:2303.04137. https://arxiv.org/abs/2303.04137</li>
+<li>π0: A Vision-Language-Action Flow Model for General Robot Control, arXiv:2410.24164. https://arxiv.org/html/2410.24164v1</li>
+<li>RLinf Documentation: RL on Lingbot-VLA Models. https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/lingbotvla.html</li>
+<li>RLinf Documentation: RL on GR00T-N1.5 Models. https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/gr00t.html</li>
+<li>SimpleVLA-RL: Scaling VLA Training via Reinforcement Learning, arXiv:2509.09674. https://arxiv.org/html/2509.09674v1</li>
+<li>Reinforcement Learning for Flow-Matching Policies, arXiv:2507.15073. https://arxiv.org/html/2507.15073v1</li>
+<li>NVIDIA Isaac-GR00T GitHub repository. https://github.com/NVIDIA/Isaac-GR00T</li>
+</ul>
+</section>
+
+
+</body>
+</html>
